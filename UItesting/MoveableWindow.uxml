@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UItesting/MoveableWindow.uss?fileID=7433441132597879392&amp;guid=aeb01a91c63ce56428e0dd248d583974&amp;type=3#MoveableWindow" />
+    <ui:VisualElement name="resizable-window" class="WindowContainer">
+        <ui:VisualElement name="window-header" class="WindowHeader" />
+        <ui:VisualElement name="window-content" class="VisualElement" />
+        <ui:VisualElement name="Resizer" class="Resizer" />
+    </ui:VisualElement>
+</ui:UXML>
