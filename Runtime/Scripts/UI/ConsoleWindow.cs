@@ -1,6 +1,7 @@
 using PlasticPipe.PlasticProtocol.Messages;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,6 +30,8 @@ namespace DragynGames.Console.UI
         [SerializeField] int maxNumberOfTips = 5;
         private bool visible;
         private CanvasGroup canvasGroup;
+
+        [SerializeField] Assembly[] assembly;
 
         private void Awake()
         {

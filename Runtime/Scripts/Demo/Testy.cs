@@ -6,7 +6,7 @@ using UnityEngine;
 [ConsoleAvailable]
 public class Testy : MonoBehaviour
 {
-    [ConsoleAction]
+    [ConsoleAction("ds","sdsa")]
    void DoStuff(){}
 
 }
