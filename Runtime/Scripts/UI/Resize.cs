@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace DragynGames
+namespace DragynGames.Console.UI
 {
-    public class Resize : MonoBehaviour,IPointerDownHandler, IPointerUpHandler
+    internal class Resize : MonoBehaviour,IPointerDownHandler, IPointerUpHandler
     {
         [SerializeField] private RectTransform targetWindow;
 

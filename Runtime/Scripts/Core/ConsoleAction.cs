@@ -7,6 +7,7 @@ namespace DragynGames.Console
         public string Name { get; private set; }
         public ConsoleAction() {
             Name = null;
+            
         }
         public ConsoleAction(string name) {
             Name = name;

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace DragynGames
+namespace DragynGames.Console.UI
 {
-    public class Move : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+    internal class Move : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         [SerializeField] private Transform targetWindow;
 
