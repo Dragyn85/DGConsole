@@ -1,0 +1,10 @@
+{
+  "name": "com.dragyngames.dgconsole",
+  "displayName": "DG Console",
+  "version": "0.0.1",
+  "description": "Run code by simply typing it in the console. Great for testing and debugging.",
+  "documentationUrl": "https://github.com/Dragyn85/DGConsole/blob/main/README.md",
+  "changelogUrl": "https://github.com/Dragyn85/DGConsole/blob/main/CHANGELOG.md",
+  "license": "MIT"
+}
+
