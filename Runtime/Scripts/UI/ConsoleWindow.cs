@@ -9,6 +9,13 @@ namespace DragynGames.Console.UI
 {
     internal class ConsoleWindow : MonoBehaviour
     {
+        [Header("Visibility")]
+        [SerializeField] KeyCode toggleVisabilty = KeyCode.L;
+        [SerializeField, Range(0, 1)] float visbleAlpha = 1;
+        
+
+       
+        [Space(10)]
         [Header("Message area")]
         [SerializeField] Transform windowContent;
         [SerializeField] TMP_Text messagePrefab;
@@ -20,14 +27,28 @@ namespace DragynGames.Console.UI
 
         TMP_InputField inputField;
         [SerializeField] int maxNumberOfTips = 5;
+        private bool visible;
+        private CanvasGroup canvasGroup;
 
         private void Awake()
         {
-
             inputField = GetComponentInChildren<TMP_InputField>();
+            canvasGroup = GetComponentInChildren<CanvasGroup>();
+            AddListeners();
+        }
+
+        private void AddListeners()
+        {
             inputField.onSubmit.AddListener(inputField_OnSubmit);
             inputField.onValueChanged.AddListener(inputField_OnChanged);
+            inputField.onDeselect.AddListener(HandleDeselect);
+            inputField.onEndEdit.AddListener(HandleDeselect);
             MethodHandler.OnSearchComplete += ShowAutocomplete;
+        }
+
+        private void HandleDeselect(string text)
+        {
+            RemoveTips();
         }
 
         void AddMessage(string message)
@@ -39,7 +60,11 @@ namespace DragynGames.Console.UI
 
         private void inputField_OnChanged(string arg0)
         {
-            if (arg0.Length == 0 || !IsCommand(arg0)) return;
+            if (arg0.Length == 0 || !IsCommand(arg0))
+            {
+                RemoveTips();
+                return;
+            }
 
             MethodHandler.FindMethodsStartingAsync(arg0.TrimStart(commandPrefix));
 
@@ -69,7 +94,7 @@ namespace DragynGames.Console.UI
                 AddMessage(consoleInput);
             }
             RemoveTips();
-            UpdateTipLayout(0);
+            
         }
 
         private bool IsCommand(string consoleInput)
@@ -87,6 +112,22 @@ namespace DragynGames.Console.UI
             }
 
             return isCommand;
+        }
+        private void Update()
+        {
+            if(Input.GetKeyDown(toggleVisabilty))
+            {
+                SetVisability(!visible);
+            }
+        }
+
+        private void SetVisability(bool visible)
+        {
+
+            canvasGroup.alpha = visible ? visbleAlpha : 0;
+            canvasGroup.interactable = visible;
+            canvasGroup.blocksRaycasts = visible;
+            this.visible = visible;
         }
 
         private void ShowAutocomplete(List<MethodDescription> methodDescriptions)
@@ -113,6 +154,7 @@ namespace DragynGames.Console.UI
                 Destroy(tip.gameObject);
 
             }
+            UpdateTipLayout(0);
         }
 
         private void UpdateTipLayout(int height)
