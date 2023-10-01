@@ -1,18 +1,15 @@
 using DragynGames.Console;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Text;
-using UnityEngine;
 
 namespace DragynGames
 {
     public static class LogHelpMethods
     {
 
-        // Logs the list of available commands
-        public static void LogAllCommands()
+        // Returns the list of available commands
+        public static string LogAllCommands(List<ConsoleMethodInfo> methods)
         {
             int length = 25;
             for (int i = 0; i < methods.Count; i++)
@@ -30,16 +27,11 @@ namespace DragynGames
                     stringBuilder.Append("\n    - ").Append(methods[i].signature);
             }
 
-            Debug.Log(stringBuilder.ToString());
-
-            // After typing help, the log that lists all the commands should automatically be expanded for better UX
-            LongMessageAdded?.Invoke();
-            //if (DebugLogManager.Instance)
-            //.Instance.AdjustLatestPendingLog(true, true);
+            return stringBuilder.ToString();
         }
 
         // Logs the list of available commands that are either equal to commandName or contain commandName as substring
-        public static void LogAllCommandsWithName(string commandName, Action<string,bool,List<ConsoleMethodInfo>> FindCommands, List<ConsoleMethodInfo> matchingMethods)
+        public static string LogAllCommandsWithName(string commandName, Action<string,bool,List<ConsoleMethodInfo>> FindCommands, List<ConsoleMethodInfo> matchingMethods)
         {
             matchingMethods.Clear();
 
@@ -50,7 +42,9 @@ namespace DragynGames
                 FindCommands(commandName, true, matchingMethods);
 
             if (matchingMethods.Count == 0)
-                Debug.LogWarning(string.Concat("ERROR: can't find command '", commandName, "'"));
+            {
+                return $"No commands matching {commandName} found";
+            }
             else
             {
                 int commandsLength = 25;
@@ -63,12 +57,7 @@ namespace DragynGames
                 for (int i = 0; i < matchingMethods.Count; i++)
                     stringBuilder.Append("\n    - ").Append(matchingMethods[i].signature);
 
-                Debug.Log(stringBuilder.ToString());
-
-
-                LongMessageAdded?.Invoke();
-                //if (DebugLogManager.Instance)
-                //  DebugLogManager.Instance.AdjustLatestPendingLog(true, true);
+                return stringBuilder.ToString();
             }
         }
     }
