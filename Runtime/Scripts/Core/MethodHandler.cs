@@ -66,61 +66,9 @@ namespace DragynGames.Console
             AddCommand<string>("help", "Prints all matching commands", LogAllCommandsWithName);
             AddCommand("sysinfo", "Prints system information", LogSystemInfo);
 
-#if UNITY_EDITOR || !NETFX_CORE
-            // Find all [ConsoleMethod] functions
-            // Don't search built-in assemblies for console methods since they can't have any
-            string[] ignoredAssemblies = new string[]
+            List<Assembly> assemblies = UnityBuiltInAssemblyIgnorer.GetAssemblies();
+            foreach (Assembly assembly in assemblies)
             {
-                "Unity",
-                "System",
-                "Mono.",
-                "mscorlib",
-                "netstandard",
-                "TextMeshPro",
-                "Microsoft.GeneratedCode",
-                "I18N",
-                "Boo.",
-                "UnityScript.",
-                "ICSharpCode.",
-                "ExCSS.Unity",
-#if UNITY_EDITOR
-                "Assembly-CSharp-Editor",
-                "Assembly-UnityScript-Editor",
-                "nunit.",
-                "SyntaxTree.",
-                "AssetStoreTools",
-#endif
-            };
-#endif
-
-#if UNITY_EDITOR || !NETFX_CORE
-            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
-#else
-			foreach( Assembly assembly in new Assembly[] { typeof( DebugLogConsole ).Assembly } ) // On UWP, at least search this plugin's Assembly for console methods
-#endif
-            {
-#if( NET_4_6 || NET_STANDARD_2_0 ) && ( UNITY_EDITOR || !NETFX_CORE )
-                if (assembly.IsDynamic)
-                    continue;
-#endif
-
-                string assemblyName = assembly.GetName().Name;
-
-#if UNITY_EDITOR || !NETFX_CORE
-                bool ignoreAssembly = false;
-                for (int i = 0; i < ignoredAssemblies.Length; i++)
-                {
-                    if (caseInsensitiveComparer.IsPrefix(assemblyName, ignoredAssemblies[i], CompareOptions.IgnoreCase))
-                    {
-                        ignoreAssembly = true;
-                        break;
-                    }
-                }
-
-                if (ignoreAssembly)
-                    continue;
-#endif
-
                 try
                 {
                     foreach (Type type in assembly.GetExportedTypes())
@@ -145,7 +93,7 @@ namespace DragynGames.Console
                                             ParameterInfo paramInfo = paramInfos[i];
                                             parameters[i] = paramInfo.Name;
                                         }
-                                        consoleMethod.SetField(method.Name,"", parameters);
+                                        consoleMethod.SetField(method.Name, "", parameters);
                                     }
 
                                     AddCommand(consoleMethod.Command, consoleMethod.Description, method, null,
@@ -166,7 +114,7 @@ namespace DragynGames.Console
                                     if (string.IsNullOrEmpty(consoleMethod.Command))
                                     {
                                         ParameterInfo[] paramInfos = method.GetParameters();
-                                        
+
                                         string[] parameters = paramInfos.Length > 0 ? new string[paramInfos.Length] : null;
 
                                         for (int i = 0; i < paramInfos.Length; i++)
@@ -194,11 +142,12 @@ namespace DragynGames.Console
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("Couldn't search assembly for [ConsoleMethod] attributes: " + assemblyName + "\n" +
+                    Debug.LogError("Couldn't search assembly for [ConsoleMethod] attributes: " + assembly.FullName + "\n" +
                                    e.ToString());
                 }
             }
         }
+
 
         // Logs the list of available commands
         public static void LogAllCommands()
@@ -246,7 +195,7 @@ namespace DragynGames.Console
                 return;
             }
 
-            TypeParser.AddParser(type,parseFunction);
+            TypeParser.AddParser(type, parseFunction);
 
             if (!string.IsNullOrEmpty(typeReadableName))
                 typeReadableNames[type] = typeReadableName;
@@ -1066,6 +1015,6 @@ namespace DragynGames.Console
             return type.Name;
         }
 
-        
+
     }
 }
