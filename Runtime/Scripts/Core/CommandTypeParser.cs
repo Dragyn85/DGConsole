@@ -6,13 +6,13 @@ using static DragynGames.Console.MethodHandler;
 
 namespace DragynGames
 {
-    public class TypeParser
+    public class CommandTypeParser
     {
         private readonly Dictionary<Type, ParseFunction> parseFunctions;
         private readonly Action<string,List<string>> FetchArgumentsFromCommand;
 
 
-        public TypeParser(Action<string,List<string>> convertCommandStringToArguments)
+        public CommandTypeParser(Action<string,List<string>> convertCommandStringToArguments)
         {
             FetchArgumentsFromCommand = convertCommandStringToArguments;
             parseFunctions = new Dictionary<Type, ParseFunction>()
@@ -50,7 +50,27 @@ namespace DragynGames
             };
         }
 
-        #region MyRegion
+        public void AddCustomParameterType(Type type, ParseFunction parseFunction,
+            string typeReadableName = null)
+        {
+            if (type == null)
+            {
+                Debug.LogError("Parameter type can't be null!");
+                return;
+            }
+            else if (parseFunction == null)
+            {
+                Debug.LogError("Parameter parseFunction can't be null!");
+                return;
+            }
+
+            AddParser(type, parseFunction);
+
+            if (!string.IsNullOrEmpty(typeReadableName))
+                ReadableTypes.AddReadableName(type, typeReadableName);
+        }
+        
+        
 
         public  bool ParseArgument(string input, Type argumentType, out object output)
         {
@@ -92,6 +112,7 @@ namespace DragynGames
             return HasParserForType(type) || typeof(Component).IsAssignableFrom(type) || type.IsEnum;
         }
 
+        #region Initial Parsers
         public  bool ParseString(string input, out object output)
         {
             output = input;
@@ -628,5 +649,7 @@ namespace DragynGames
         }
 
         #endregion
+        
+        
     }
 }
