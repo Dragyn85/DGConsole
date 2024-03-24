@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using Object = UnityEngine.Object;
@@ -42,6 +43,8 @@ namespace DragynGames.Console
 
         private CommandTypeParser _commandTypeParser;
 
+        private static Dictionary<string, ConsoleMethodInfo> commandDictionary = new Dictionary<string, ConsoleMethodInfo>();
+        
         public MethodHandler()
         {
             _commandTypeParser = new CommandTypeParser(FetchArgumentsFromCommand);
@@ -460,13 +463,9 @@ namespace DragynGames.Console
             }
         }
 
-        // Remove all commands with the matching method from the console
-        public void RemoveCommand(Action method)
-        {
-            RemoveCommand(method.Method);
-        }
-
-        public void RemoveCommand<T1>(Action<T1> method)
+        
+#region RemoveCommand overloads
+        public static void RemoveCommand<T1>(Action<T1> method)
         {
             RemoveCommand(method.Method);
         }
