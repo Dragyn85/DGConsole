@@ -32,9 +32,10 @@ namespace DragynGames.Console.UI
         private CanvasGroup canvasGroup;
 
         [SerializeField] Assembly[] assembly;
-
+        MethodHandler methodHandler;
         private void Awake()
         {
+            methodHandler = new MethodHandler();
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             AddListeners();

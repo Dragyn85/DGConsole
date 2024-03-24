@@ -21,7 +21,7 @@ using SystemInfo = UnityEngine.Device.SystemInfo; // To support Device Simulator
 // Helper class to store important information about a command
 namespace DragynGames.Console
 {
-    public static class MethodHandler
+    public class MethodHandler
     {
         public static event Action LongMessageAdded;
 
@@ -31,41 +31,26 @@ namespace DragynGames.Console
         private static readonly List<ConsoleMethodInfo> methods = new List<ConsoleMethodInfo>();
         private static readonly List<ConsoleMethodInfo> matchingMethods = new List<ConsoleMethodInfo>(4);
 
-
-        // All the readable names of accepted types
-        private static readonly Dictionary<Type, string> typeReadableNames = new Dictionary<Type, string>()
-        {
-            {typeof(string), "String"},
-            {typeof(bool), "Boolean"},
-            {typeof(int), "Integer"},
-            {typeof(uint), "Unsigned Integer"},
-            {typeof(long), "Long"},
-            {typeof(ulong), "Unsigned Long"},
-            {typeof(byte), "Byte"},
-            {typeof(sbyte), "Short Byte"},
-            {typeof(short), "Short"},
-            {typeof(ushort), "Unsigned Short"},
-            {typeof(char), "Char"},
-            {typeof(float), "Float"},
-            {typeof(double), "Double"},
-            {typeof(decimal), "Decimal"}
-        };
-
         // Split arguments of an entered command
         private static readonly List<string> commandArguments = new List<string>(8);
 
         // Command parameter delimeter groups
-        private static readonly string[] inputDelimiters = new string[] { "\"\"", "''", "{}", "()", "[]" };
+        private static readonly string[] inputDelimiters = new string[] {"\"\"", "''", "{}", "()", "[]"};
 
         // CompareInfo used for case-insensitive command name comparison
         internal static readonly CompareInfo caseInsensitiveComparer = new CultureInfo("en-US").CompareInfo;
 
-        static MethodHandler()
+        public MethodHandler()
         {
             AddCommand("help", "Prints all commands", LogAllCommands);
             AddCommand<string>("help", "Prints all matching commands", LogAllCommandsWithName);
             AddCommand("sysinfo", "Prints system information", LogSystemInfo);
 
+            SearchForCommands();
+        }
+
+        private static void SearchForCommands()
+        {
             List<Assembly> assemblies = UnityBuiltInAssemblyIgnorer.GetAssemblies();
             foreach (Assembly assembly in assemblies)
             {
@@ -73,61 +58,20 @@ namespace DragynGames.Console
                 {
                     foreach (Type type in assembly.GetExportedTypes())
                     {
-                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | BindingFlags.Public |
-                                                                      BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Static | 
+                                                                      BindingFlags.Public |
+                                                                      BindingFlags.NonPublic |
+                                                                      BindingFlags.DeclaredOnly))
                         {
-                            foreach (object attribute in method.GetCustomAttributes(typeof(ConsoleActionAttribute),
-                                false))
-                            {
-                                ConsoleActionAttribute consoleMethod = attribute as ConsoleActionAttribute;
-                                if (consoleMethod != null)
-                                {
-                                    if (string.IsNullOrEmpty(consoleMethod.Command))
-                                    {
-                                        ParameterInfo[] paramInfos = method.GetParameters();
-
-                                        string[] parameters = paramInfos.Length > 0 ? new string[paramInfos.Length] : null;
-
-                                        for (int i = 0; i < paramInfos.Length; i++)
-                                        {
-                                            ParameterInfo paramInfo = paramInfos[i];
-                                            parameters[i] = paramInfo.Name;
-                                        }
-                                        consoleMethod.SetField(method.Name, "", parameters);
-                                    }
-
-                                    AddCommand(consoleMethod.Command, consoleMethod.Description, method, null,
-                                        consoleMethod.ParameterNames);
-                                }
-                            }
+                            AddMethodAsCommand(method);
                         }
 
-                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | BindingFlags.Public |
-                                                                                                 BindingFlags.NonPublic | BindingFlags.DeclaredOnly))
+                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance | 
+                                                                      BindingFlags.Public |
+                                                                      BindingFlags.NonPublic |
+                                                                      BindingFlags.DeclaredOnly))
                         {
-                            foreach (object attribute in method.GetCustomAttributes(typeof(ConsoleActionAttribute),
-                                                               false))
-                            {
-                                ConsoleActionAttribute consoleMethod = attribute as ConsoleActionAttribute;
-                                if (consoleMethod != null)
-                                {
-                                    if (string.IsNullOrEmpty(consoleMethod.Command))
-                                    {
-                                        ParameterInfo[] paramInfos = method.GetParameters();
-
-                                        string[] parameters = paramInfos.Length > 0 ? new string[paramInfos.Length] : null;
-
-                                        for (int i = 0; i < paramInfos.Length; i++)
-                                        {
-                                            ParameterInfo paramInfo = paramInfos[i];
-                                            parameters[i] = paramInfo.Name;
-                                        }
-                                        consoleMethod.SetField(method.Name, "", parameters);
-                                    }
-                                    AddCommand(consoleMethod.Command, consoleMethod.Description, method, null,
-                                                                               consoleMethod.ParameterNames);
-                                }
-                            }
+                            AddMethodAsCommand(method);
                         }
                     }
                 }
@@ -142,8 +86,38 @@ namespace DragynGames.Console
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError("Couldn't search assembly for [ConsoleMethod] attributes: " + assembly.FullName + "\n" +
+                    Debug.LogError("Couldn't search assembly for [ConsoleMethod] attributes: " + assembly.FullName +
+                                   "\n" +
                                    e.ToString());
+                }
+            }
+        }
+
+        private static void AddMethodAsCommand(MethodInfo method)
+        {
+            foreach (object attribute in method.GetCustomAttributes(typeof(ConsoleActionAttribute),
+                         false))
+            {
+                ConsoleActionAttribute consoleMethod = attribute as ConsoleActionAttribute;
+                if (consoleMethod != null)
+                {
+                    if (string.IsNullOrEmpty(consoleMethod.Command))
+                    {
+                        ParameterInfo[] paramInfos = method.GetParameters();
+
+                        string[] parameters = paramInfos.Length > 0 ? new string[paramInfos.Length] : null;
+
+                        for (int i = 0; i < paramInfos.Length; i++)
+                        {
+                            ParameterInfo paramInfo = paramInfos[i];
+                            parameters[i] = paramInfo.Name;
+                        }
+
+                        consoleMethod.SetField(method.Name, "", parameters);
+                    }
+
+                    AddCommand(consoleMethod.Command, consoleMethod.Description, method, null,
+                        consoleMethod.ParameterNames);
                 }
             }
         }
@@ -163,7 +137,8 @@ namespace DragynGames.Console
         public static void LogAllCommandsWithName(string commandName)
         {
             matchingMethods.Clear();
-            string AllMatchingMethods = LogHelpMethods.LogAllCommandsWithName(commandName, FindCommands, matchingMethods);
+            string AllMatchingMethods =
+                LogHelpMethods.LogAllCommandsWithName(commandName, FindCommands, matchingMethods);
 
             Debug.Log(AllMatchingMethods);
 
@@ -173,11 +148,9 @@ namespace DragynGames.Console
         // Logs system information
         public static void LogSystemInfo()
         {
-
             Debug.Log(SystemInfoLogger.LogSystemInfo());
 
             LongMessageAdded?.Invoke();
-
         }
 
         // Add a custom Type to the list of recognized command parameter Types
@@ -198,16 +171,18 @@ namespace DragynGames.Console
             TypeParser.AddParser(type, parseFunction);
 
             if (!string.IsNullOrEmpty(typeReadableName))
-                typeReadableNames[type] = typeReadableName;
+                ReadableTypes.AddReadableName(type, typeReadableName);
         }
 
         // Remove a custom Type from the list of recognized command parameter Types
         public static void RemoveCustomParameterType(Type type)
         {
             TypeParser.RemoveType(type);
-            typeReadableNames.Remove(type);
+            ReadableTypes.Remove(type);
         }
+
         #region AddCommand overloads
+
         // Add a command related with an instance method (i.e. non static method)
         public static void AddCommandInstance(string command, string description, string methodName, object instance,
             params string[] parameterNames)
@@ -288,48 +263,48 @@ namespace DragynGames.Console
         // Add a command with custom parameter names
         public static void AddCommand<T1>(string command, string description, Action<T1> method, string parameterName)
         {
-            AddCommand(command, description, method.Method, method.Target, new string[1] { parameterName });
+            AddCommand(command, description, method.Method, method.Target, new string[1] {parameterName});
         }
 
         public static void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method,
             string parameterName1, string parameterName2)
         {
             AddCommand(command, description, method.Method, method.Target,
-                new string[2] { parameterName1, parameterName2 });
+                new string[2] {parameterName1, parameterName2});
         }
 
         public static void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method,
             string parameterName)
         {
-            AddCommand(command, description, method.Method, method.Target, new string[1] { parameterName });
+            AddCommand(command, description, method.Method, method.Target, new string[1] {parameterName});
         }
 
         public static void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
             string parameterName1, string parameterName2, string parameterName3)
         {
             AddCommand(command, description, method.Method, method.Target,
-                new string[3] { parameterName1, parameterName2, parameterName3 });
+                new string[3] {parameterName1, parameterName2, parameterName3});
         }
 
         public static void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method,
             string parameterName1, string parameterName2)
         {
             AddCommand(command, description, method.Method, method.Target,
-                new string[2] { parameterName1, parameterName2 });
+                new string[2] {parameterName1, parameterName2});
         }
 
         public static void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
             string parameterName1, string parameterName2, string parameterName3, string parameterName4)
         {
             AddCommand(command, description, method.Method, method.Target,
-                new string[4] { parameterName1, parameterName2, parameterName3, parameterName4 });
+                new string[4] {parameterName1, parameterName2, parameterName3, parameterName4});
         }
 
         public static void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
             string parameterName1, string parameterName2, string parameterName3)
         {
             AddCommand(command, description, method.Method, method.Target,
-                new string[3] { parameterName1, parameterName2, parameterName3 });
+                new string[3] {parameterName1, parameterName2, parameterName3});
         }
 
         public static void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
@@ -337,7 +312,7 @@ namespace DragynGames.Console
             string parameterName4)
         {
             AddCommand(command, description, method.Method, method.Target,
-                new string[4] { parameterName1, parameterName2, parameterName3, parameterName4 });
+                new string[4] {parameterName1, parameterName2, parameterName3, parameterName4});
         }
 
         public static void AddCommand(string command, string description, Delegate method,
@@ -345,6 +320,7 @@ namespace DragynGames.Console
         {
             AddCommand(command, description, method.Method, method.Target, parameterNames);
         }
+
         #endregion
 
         // Create a new command and set its properties
@@ -416,11 +392,11 @@ namespace DragynGames.Console
                 int commandLastIndex = commandIndex;
 
                 while (commandFirstIndex > 0 && caseInsensitiveComparer.Compare(methods[commandFirstIndex - 1].command,
-                    command, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                           command, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     commandFirstIndex--;
                 while (commandLastIndex < methods.Count - 1 && caseInsensitiveComparer.Compare(
-                    methods[commandLastIndex + 1].command, command,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                           methods[commandLastIndex + 1].command, command,
+                           CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     commandLastIndex++;
 
                 commandIndex = commandFirstIndex;
@@ -505,7 +481,7 @@ namespace DragynGames.Console
                 for (int i = methods.Count - 1; i >= 0; i--)
                 {
                     if (caseInsensitiveComparer.Compare(methods[i].command, command,
-                        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                         methods.RemoveAt(i);
                 }
             }
@@ -597,10 +573,10 @@ namespace DragynGames.Console
             for (int i = commandIndex + 1; i < methods.Count; i++)
             {
                 if (caseInsensitiveComparer.Compare(methods[i].command, previousSuggestion,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     continue;
                 else if (caseInsensitiveComparer.IsPrefix(methods[i].command, commandStart,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
+                             CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
                     return methods[i].command;
                 else
                     break;
@@ -609,9 +585,9 @@ namespace DragynGames.Console
             // Couldn't find a command that follows previousSuggestion and satisfies commandStart, loop back to the beginning of the autocomplete suggestions
             string result = null;
             for (int i = commandIndex - 1;
-                i >= 0 && caseInsensitiveComparer.IsPrefix(methods[i].command, commandStart,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
-                i--)
+                 i >= 0 && caseInsensitiveComparer.IsPrefix(methods[i].command, commandStart,
+                     CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
+                 i--)
                 result = methods[i].command;
 
             return result;
@@ -642,11 +618,11 @@ namespace DragynGames.Console
 
                 int commandLastIndex = commandIndex;
                 while (commandIndex > 0 && caseInsensitiveComparer.Compare(methods[commandIndex - 1].command, _command,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                           CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     commandIndex--;
                 while (commandLastIndex < methods.Count - 1 && caseInsensitiveComparer.Compare(
-                    methods[commandLastIndex + 1].command, _command,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                           methods[commandLastIndex + 1].command, _command,
+                           CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     commandLastIndex++;
 
                 while (commandIndex <= commandLastIndex)
@@ -788,7 +764,7 @@ namespace DragynGames.Console
                 for (int i = 0; i < methods.Count; i++)
                 {
                     if (methods[i].IsValid() && caseInsensitiveComparer.IndexOf(methods[i].command, commandName,
-                        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0)
+                            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) >= 0)
                         matchingCommands.Add(methods[i]);
                 }
             }
@@ -797,7 +773,7 @@ namespace DragynGames.Console
                 for (int i = 0; i < methods.Count; i++)
                 {
                     if (methods[i].IsValid() && caseInsensitiveComparer.Compare(methods[i].command, commandName,
-                        CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                         matchingCommands.Add(methods[i]);
                 }
             }
@@ -873,14 +849,14 @@ namespace DragynGames.Console
                 {
                     // Match all commands that start with commandName
                     if (commandIndex < methods.Count && caseInsensitiveComparer.IsPrefix(methods[commandIndex].command,
-                        commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
+                            commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
                     {
                         while (commandIndex > 0 && caseInsensitiveComparer.IsPrefix(methods[commandIndex - 1].command,
-                            commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
+                                   commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
                             commandIndex--;
                         while (commandLastIndex < methods.Count - 1 && caseInsensitiveComparer.IsPrefix(
-                            methods[commandLastIndex + 1].command, commandName,
-                            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
+                                   methods[commandLastIndex + 1].command, commandName,
+                                   CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
                             commandLastIndex++;
                     }
                     else
@@ -890,10 +866,10 @@ namespace DragynGames.Console
                 {
                     // Match only the commands that are equal to commandName
                     if (commandIndex < methods.Count && caseInsensitiveComparer.Compare(methods[commandIndex].command,
-                        commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                            commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                     {
                         while (commandIndex > 0 && caseInsensitiveComparer.Compare(methods[commandIndex - 1].command,
-                            commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                                   commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
                             commandIndex--;
                         while (commandLastIndex < methods.Count - 1 &&
                                caseInsensitiveComparer.Compare(methods[commandLastIndex + 1].command, commandName,
@@ -1000,13 +976,13 @@ namespace DragynGames.Console
         public static string GetTypeReadableName(Type type)
         {
             string result;
-            if (typeReadableNames.TryGetValue(type, out result))
+            if (ReadableTypes.TryGetReadableName(type, out result))
                 return result;
 
             if (IsSupportedArrayType(type))
             {
                 Type elementType = type.IsArray ? type.GetElementType() : type.GetGenericArguments()[0];
-                if (typeReadableNames.TryGetValue(elementType, out result))
+                if (ReadableTypes.TryGetReadableName(elementType, out result))
                     return result + "[]";
                 else
                     return elementType.Name + "[]";
@@ -1014,7 +990,5 @@ namespace DragynGames.Console
 
             return type.Name;
         }
-
-
     }
 }
