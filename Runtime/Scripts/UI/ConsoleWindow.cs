@@ -89,7 +89,7 @@ namespace DragynGames.Console.UI
                 string command = consoleInput.Trim(commandPrefix);
 
 
-                MethodHandler.ExecuteCommand(command);
+                methodHandler.ExecuteCommand(command);
                 //if (!string.IsNullOrEmpty(response))
                 {
                     //  AddMessage(response);

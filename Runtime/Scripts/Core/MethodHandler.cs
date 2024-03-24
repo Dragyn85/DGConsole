@@ -23,25 +23,29 @@ namespace DragynGames.Console
 {
     public class MethodHandler
     {
-        public static event Action LongMessageAdded;
+        public  event Action LongMessageAdded;
 
         public delegate bool ParseFunction(string input, out object output);
 
         // All the commands
-        private static readonly List<ConsoleMethodInfo> methods = new List<ConsoleMethodInfo>();
-        private static readonly List<ConsoleMethodInfo> matchingMethods = new List<ConsoleMethodInfo>(4);
+        private  readonly List<ConsoleMethodInfo> methods = new List<ConsoleMethodInfo>();
+        private  readonly List<ConsoleMethodInfo> matchingMethods = new List<ConsoleMethodInfo>(4);
 
         // Split arguments of an entered command
-        private static readonly List<string> commandArguments = new List<string>(8);
+        private  readonly List<string> commandArguments = new List<string>(8);
 
         // Command parameter delimeter groups
-        private static readonly string[] inputDelimiters = new string[] {"\"\"", "''", "{}", "()", "[]"};
+        private  readonly string[] inputDelimiters = new string[] {"\"\"", "''", "{}", "()", "[]"};
 
         // CompareInfo used for case-insensitive command name comparison
-        internal static readonly CompareInfo caseInsensitiveComparer = new CultureInfo("en-US").CompareInfo;
+        internal  readonly CompareInfo caseInsensitiveComparer = new CultureInfo("en-US").CompareInfo;
+
+        private TypeParser typeParser;
 
         public MethodHandler()
         {
+            typeParser = new TypeParser(FetchArgumentsFromCommand);
+            
             AddCommand("help", "Prints all commands", LogAllCommands);
             AddCommand<string>("help", "Prints all matching commands", LogAllCommandsWithName);
             AddCommand("sysinfo", "Prints system information", LogSystemInfo);
@@ -49,7 +53,7 @@ namespace DragynGames.Console
             SearchForCommands();
         }
 
-        private static void SearchForCommands()
+        private  void SearchForCommands()
         {
             List<Assembly> assemblies = UnityBuiltInAssemblyIgnorer.GetAssemblies();
             foreach (Assembly assembly in assemblies)
@@ -93,7 +97,7 @@ namespace DragynGames.Console
             }
         }
 
-        private static void AddMethodAsCommand(MethodInfo method)
+        private  void AddMethodAsCommand(MethodInfo method)
         {
             foreach (object attribute in method.GetCustomAttributes(typeof(ConsoleActionAttribute),
                          false))
@@ -124,7 +128,7 @@ namespace DragynGames.Console
 
 
         // Logs the list of available commands
-        public static void LogAllCommands()
+        public  void LogAllCommands()
         {
             string allCommands = LogHelpMethods.LogAllCommands(methods);
             Debug.Log(allCommands);
@@ -134,7 +138,7 @@ namespace DragynGames.Console
         }
 
         // Logs the list of available commands that are either equal to commandName or contain commandName as substring
-        public static void LogAllCommandsWithName(string commandName)
+        public  void LogAllCommandsWithName(string commandName)
         {
             matchingMethods.Clear();
             string AllMatchingMethods =
@@ -146,7 +150,7 @@ namespace DragynGames.Console
         }
 
         // Logs system information
-        public static void LogSystemInfo()
+        public  void LogSystemInfo()
         {
             Debug.Log(SystemInfoLogger.LogSystemInfo());
 
@@ -154,7 +158,7 @@ namespace DragynGames.Console
         }
 
         // Add a custom Type to the list of recognized command parameter Types
-        public static void AddCustomParameterType(Type type, ParseFunction parseFunction,
+        public  void AddCustomParameterType(Type type, ParseFunction parseFunction,
             string typeReadableName = null)
         {
             if (type == null)
@@ -168,23 +172,23 @@ namespace DragynGames.Console
                 return;
             }
 
-            TypeParser.AddParser(type, parseFunction);
+            typeParser.AddParser(type, parseFunction);
 
             if (!string.IsNullOrEmpty(typeReadableName))
                 ReadableTypes.AddReadableName(type, typeReadableName);
         }
 
         // Remove a custom Type from the list of recognized command parameter Types
-        public static void RemoveCustomParameterType(Type type)
+        public  void RemoveCustomParameterType(Type type)
         {
-            TypeParser.RemoveType(type);
+            typeParser.RemoveType(type);
             ReadableTypes.Remove(type);
         }
 
         #region AddCommand overloads
 
         // Add a command related with an instance method (i.e. non static method)
-        public static void AddCommandInstance(string command, string description, string methodName, object instance,
+        public  void AddCommandInstance(string command, string description, string methodName, object instance,
             params string[] parameterNames)
         {
             if (instance == null)
@@ -197,117 +201,117 @@ namespace DragynGames.Console
         }
 
         // Add a command related with a static method (i.e. no instance is required to call the method)
-        public static void AddCommandStatic(string command, string description, string methodName, Type ownerType,
+        public  void AddCommandStatic(string command, string description, string methodName, Type ownerType,
             params string[] parameterNames)
         {
             AddCommand(command, description, methodName, ownerType, null, parameterNames);
         }
 
         // Add a command that can be related to either a static or an instance method
-        public static void AddCommand(string command, string description, Action method)
+        public  void AddCommand(string command, string description, Action method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1>(string command, string description, Action<T1> method)
+        public  void AddCommand<T1>(string command, string description, Action<T1> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1>(string command, string description, Func<T1> method)
+        public  void AddCommand<T1>(string command, string description, Func<T1> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method)
+        public  void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method)
+        public  void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method)
+        public  void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method)
+        public  void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method)
+        public  void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method)
+        public  void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
+        public  void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
             Func<T1, T2, T3, T4, T5> method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
-        public static void AddCommand(string command, string description, Delegate method)
+        public  void AddCommand(string command, string description, Delegate method)
         {
             AddCommand(command, description, method.Method, method.Target, null);
         }
 
         // Add a command with custom parameter names
-        public static void AddCommand<T1>(string command, string description, Action<T1> method, string parameterName)
+        public  void AddCommand<T1>(string command, string description, Action<T1> method, string parameterName)
         {
             AddCommand(command, description, method.Method, method.Target, new string[1] {parameterName});
         }
 
-        public static void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method,
+        public  void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method,
             string parameterName1, string parameterName2)
         {
             AddCommand(command, description, method.Method, method.Target,
                 new string[2] {parameterName1, parameterName2});
         }
 
-        public static void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method,
+        public  void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method,
             string parameterName)
         {
             AddCommand(command, description, method.Method, method.Target, new string[1] {parameterName});
         }
 
-        public static void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
+        public  void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
             string parameterName1, string parameterName2, string parameterName3)
         {
             AddCommand(command, description, method.Method, method.Target,
                 new string[3] {parameterName1, parameterName2, parameterName3});
         }
 
-        public static void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method,
+        public  void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method,
             string parameterName1, string parameterName2)
         {
             AddCommand(command, description, method.Method, method.Target,
                 new string[2] {parameterName1, parameterName2});
         }
 
-        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
+        public  void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
             string parameterName1, string parameterName2, string parameterName3, string parameterName4)
         {
             AddCommand(command, description, method.Method, method.Target,
                 new string[4] {parameterName1, parameterName2, parameterName3, parameterName4});
         }
 
-        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
+        public  void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
             string parameterName1, string parameterName2, string parameterName3)
         {
             AddCommand(command, description, method.Method, method.Target,
                 new string[3] {parameterName1, parameterName2, parameterName3});
         }
 
-        public static void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
+        public  void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
             Func<T1, T2, T3, T4, T5> method, string parameterName1, string parameterName2, string parameterName3,
             string parameterName4)
         {
@@ -315,7 +319,7 @@ namespace DragynGames.Console
                 new string[4] {parameterName1, parameterName2, parameterName3, parameterName4});
         }
 
-        public static void AddCommand(string command, string description, Delegate method,
+        public  void AddCommand(string command, string description, Delegate method,
             params string[] parameterNames)
         {
             AddCommand(command, description, method.Method, method.Target, parameterNames);
@@ -324,7 +328,7 @@ namespace DragynGames.Console
         #endregion
 
         // Create a new command and set its properties
-        private static void AddCommand(string command, string description, string methodName, Type ownerType,
+        private  void AddCommand(string command, string description, string methodName, Type ownerType,
             object instance, string[] parameterNames)
         {
             // Get the method from the class
@@ -340,7 +344,7 @@ namespace DragynGames.Console
             AddCommand(command, description, method, instance, parameterNames);
         }
 
-        private static void AddCommand(string command, string description, MethodInfo method, object instance,
+        private  void AddCommand(string command, string description, MethodInfo method, object instance,
             string[] parameterNames)
         {
             if (string.IsNullOrEmpty(command))
@@ -372,8 +376,8 @@ namespace DragynGames.Console
                 }
 
                 Type parameterType = parameters[i].ParameterType;
-                if (TypeParser.HasParserForType(parameterType) || typeof(Component).IsAssignableFrom(parameterType) ||
-                    parameterType.IsEnum || IsSupportedArrayType(parameterType))
+                if (typeParser.HasParserForType(parameterType) || typeof(Component).IsAssignableFrom(parameterType) ||
+                    parameterType.IsEnum || typeParser.IsSupportedArrayType(parameterType))
                     parameterTypes[i] = parameterType;
                 else
                 {
@@ -474,7 +478,7 @@ namespace DragynGames.Console
         }
 
         // Remove all commands with the matching command name from the console
-        public static void RemoveCommand(string command)
+        public  void RemoveCommand(string command)
         {
             if (!string.IsNullOrEmpty(command))
             {
@@ -488,62 +492,62 @@ namespace DragynGames.Console
         }
 
         // Remove all commands with the matching method from the console
-        public static void RemoveCommand(Action method)
+        public  void RemoveCommand(Action method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1>(Action<T1> method)
+        public  void RemoveCommand<T1>(Action<T1> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1>(Func<T1> method)
+        public  void RemoveCommand<T1>(Func<T1> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2>(Action<T1, T2> method)
+        public  void RemoveCommand<T1, T2>(Action<T1, T2> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2>(Func<T1, T2> method)
+        public  void RemoveCommand<T1, T2>(Func<T1, T2> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2, T3>(Action<T1, T2, T3> method)
+        public  void RemoveCommand<T1, T2, T3>(Action<T1, T2, T3> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2, T3>(Func<T1, T2, T3> method)
+        public  void RemoveCommand<T1, T2, T3>(Func<T1, T2, T3> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method)
+        public  void RemoveCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2, T3, T4>(Func<T1, T2, T3, T4> method)
+        public  void RemoveCommand<T1, T2, T3, T4>(Func<T1, T2, T3, T4> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand<T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5> method)
+        public  void RemoveCommand<T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5> method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand(Delegate method)
+        public  void RemoveCommand(Delegate method)
         {
             RemoveCommand(method.Method);
         }
 
-        public static void RemoveCommand(MethodInfo method)
+        public  void RemoveCommand(MethodInfo method)
         {
             if (method != null)
             {
@@ -556,7 +560,7 @@ namespace DragynGames.Console
         }
 
         // Returns the first command that starts with the entered argument
-        public static string GetAutoCompleteCommand(string commandStart, string previousSuggestion)
+        public  string GetAutoCompleteCommand(string commandStart, string previousSuggestion)
         {
             int commandIndex =
                 FindCommandIndex(!string.IsNullOrEmpty(previousSuggestion) ? previousSuggestion : commandStart);
@@ -594,7 +598,7 @@ namespace DragynGames.Console
         }
 
         // Parse the command and try to execute it
-        public static void ExecuteCommand(string command)
+        public  void ExecuteCommand(string command)
         {
             if (command == null)
                 return;
@@ -695,7 +699,7 @@ namespace DragynGames.Console
                         Type parameterType = methodInfo.parameterTypes[j];
 
                         object val;
-                        if (TypeParser.ParseArgument(argument, parameterType, out val))
+                        if (typeParser.ParseArgument(argument, parameterType, out val))
                             parameters[j] = val;
                         else
                         {
@@ -732,7 +736,7 @@ namespace DragynGames.Console
             }
         }
 
-        public static void FetchArgumentsFromCommand(string command, List<string> commandArguments)
+        public void FetchArgumentsFromCommand(string command, List<string> commandArguments)
         {
             for (int i = 0; i < command.Length; i++)
             {
@@ -756,7 +760,7 @@ namespace DragynGames.Console
             }
         }
 
-        public static void FindCommands(string commandName, bool allowSubstringMatching,
+        public  void FindCommands(string commandName, bool allowSubstringMatching,
             List<ConsoleMethodInfo> matchingCommands)
         {
             if (allowSubstringMatching)
@@ -783,7 +787,7 @@ namespace DragynGames.Console
         // - caretIndexIncrements: indices inside "string command" that separate two arguments in the command. This is used to
         //   figure out which argument the caret is standing on
         // - commandName: command's name (first argument)
-        internal static void GetCommandSuggestions(string command, List<ConsoleMethodInfo> matchingCommands,
+        internal  void GetCommandSuggestions(string command, List<ConsoleMethodInfo> matchingCommands,
             List<int> caretIndexIncrements, ref string commandName, out int numberOfParameters)
         {
             bool commandNameCalculated = false;
@@ -889,7 +893,7 @@ namespace DragynGames.Console
         }
 
         // Find the index of the delimiter group that 'c' belongs to
-        private static int IndexOfDelimiterGroup(char c)
+        private  int IndexOfDelimiterGroup(char c)
         {
             for (int i = 0; i < inputDelimiters.Length; i++)
             {
@@ -900,7 +904,7 @@ namespace DragynGames.Console
             return -1;
         }
 
-        private static int IndexOfDelimiterGroupEnd(string command, int delimiterIndex, int startIndex)
+        private  int IndexOfDelimiterGroupEnd(string command, int delimiterIndex, int startIndex)
         {
             char startChar = inputDelimiters[delimiterIndex][0];
             char endChar = inputDelimiters[delimiterIndex][1];
@@ -921,7 +925,7 @@ namespace DragynGames.Console
         }
 
         // Find the index of char in the string, or return the length of string instead of -1
-        private static int IndexOfChar(string command, char c, int startIndex)
+        private  int IndexOfChar(string command, char c, int startIndex)
         {
             int result = command.IndexOf(c, startIndex);
             if (result < 0)
@@ -931,7 +935,7 @@ namespace DragynGames.Console
         }
 
         // Find command's index in the list of registered commands using binary search
-        private static int FindCommandIndex(string command)
+        private  int FindCommandIndex(string command)
         {
             int min = 0;
             int max = methods.Count - 1;
@@ -951,35 +955,14 @@ namespace DragynGames.Console
             return ~min;
         }
 
-        public static bool IsSupportedArrayType(Type type)
-        {
-            if (type.IsArray)
-            {
-                if (type.GetArrayRank() != 1)
-                    return false;
-
-                type = type.GetElementType();
-            }
-            else if (type.IsGenericType)
-            {
-                if (type.GetGenericTypeDefinition() != typeof(List<>))
-                    return false;
-
-                type = type.GetGenericArguments()[0];
-            }
-            else
-                return false;
-
-            return TypeParser.HasParserForType(type) || typeof(Component).IsAssignableFrom(type) || type.IsEnum;
-        }
-
-        public static string GetTypeReadableName(Type type)
+        
+        public  string GetTypeReadableName(Type type)
         {
             string result;
             if (ReadableTypes.TryGetReadableName(type, out result))
                 return result;
 
-            if (IsSupportedArrayType(type))
+            if (typeParser.IsSupportedArrayType(type))
             {
                 Type elementType = type.IsArray ? type.GetElementType() : type.GetGenericArguments()[0];
                 if (ReadableTypes.TryGetReadableName(elementType, out result))

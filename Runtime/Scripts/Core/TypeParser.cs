@@ -8,43 +8,51 @@ namespace DragynGames
 {
     public class TypeParser
     {
-        private static readonly Dictionary<Type, ParseFunction> parseFunctions = new Dictionary<Type, ParseFunction>()
+        private readonly Dictionary<Type, ParseFunction> parseFunctions;
+        private readonly Action<string,List<string>> FetchArgumentsFromCommand;
+
+
+        public TypeParser(Action<string,List<string>> convertCommandStringToArguments)
         {
-            {typeof(string), ParseString},
-            {typeof(bool), ParseBool},
-            {typeof(int), ParseInt},
-            {typeof(uint), ParseUInt},
-            {typeof(long), ParseLong},
-            {typeof(ulong), ParseULong},
-            {typeof(byte), ParseByte},
-            {typeof(sbyte), ParseSByte},
-            {typeof(short), ParseShort},
-            {typeof(ushort), ParseUShort},
-            {typeof(char), ParseChar},
-            {typeof(float), ParseFloat},
-            {typeof(double), ParseDouble},
-            {typeof(decimal), ParseDecimal},
-            {typeof(Vector2), ParseVector2},
-            {typeof(Vector3), ParseVector3},
-            {typeof(Vector4), ParseVector4},
-            {typeof(Quaternion), ParseQuaternion},
-            {typeof(Color), ParseColor},
-            {typeof(Color32), ParseColor32},
-            {typeof(Rect), ParseRect},
-            {typeof(RectOffset), ParseRectOffset},
-            {typeof(Bounds), ParseBounds},
-            {typeof(GameObject), ParseGameObject},
+            FetchArgumentsFromCommand = convertCommandStringToArguments;
+            parseFunctions = new Dictionary<Type, ParseFunction>()
+            {
+                {typeof(string), ParseString},
+                {typeof(bool), ParseBool},
+                {typeof(int), ParseInt},
+                {typeof(uint), ParseUInt},
+                {typeof(long), ParseLong},
+                {typeof(ulong), ParseULong},
+                {typeof(byte), ParseByte},
+                {typeof(sbyte), ParseSByte},
+                {typeof(short), ParseShort},
+                {typeof(ushort), ParseUShort},
+                {typeof(char), ParseChar},
+                {typeof(float), ParseFloat},
+                {typeof(double), ParseDouble},
+                {typeof(decimal), ParseDecimal},
+                {typeof(Vector2), ParseVector2},
+                {typeof(Vector3), ParseVector3},
+                {typeof(Vector4), ParseVector4},
+                {typeof(Quaternion), ParseQuaternion},
+                {typeof(Color), ParseColor},
+                {typeof(Color32), ParseColor32},
+                {typeof(Rect), ParseRect},
+                {typeof(RectOffset), ParseRectOffset},
+                {typeof(Bounds), ParseBounds},
+                {typeof(GameObject), ParseGameObject},
 #if UNITY_2017_2_OR_NEWER
-            {typeof(Vector2Int), ParseVector2Int},
-            {typeof(Vector3Int), ParseVector3Int},
-            {typeof(RectInt), ParseRectInt},
-            {typeof(BoundsInt), ParseBoundsInt},
+                {typeof(Vector2Int), ParseVector2Int},
+                {typeof(Vector3Int), ParseVector3Int},
+                {typeof(RectInt), ParseRectInt},
+                {typeof(BoundsInt), ParseBoundsInt},
 #endif
-        };
+            };
+        }
 
         #region MyRegion
 
-        public static bool ParseArgument(string input, Type argumentType, out object output)
+        public  bool ParseArgument(string input, Type argumentType, out object output)
         {
             ParseFunction parseFunction;
             if (parseFunctions.TryGetValue(argumentType, out parseFunction))
@@ -61,14 +69,36 @@ namespace DragynGames
                 return false;
             }
         }
+        
+        public bool IsSupportedArrayType(Type type)
+        {
+            if (type.IsArray)
+            {
+                if (type.GetArrayRank() != 1)
+                    return false;
 
-        public static bool ParseString(string input, out object output)
+                type = type.GetElementType();
+            }
+            else if (type.IsGenericType)
+            {
+                if (type.GetGenericTypeDefinition() != typeof(List<>))
+                    return false;
+
+                type = type.GetGenericArguments()[0];
+            }
+            else
+                return false;
+
+            return HasParserForType(type) || typeof(Component).IsAssignableFrom(type) || type.IsEnum;
+        }
+
+        public  bool ParseString(string input, out object output)
         {
             output = input;
             return true;
         }
 
-        public static bool ParseBool(string input, out object output)
+        public  bool ParseBool(string input, out object output)
         {
             if (input == "1" || input.ToLowerInvariant() == "true")
             {
@@ -86,7 +116,7 @@ namespace DragynGames
             return false;
         }
 
-        public static bool ParseInt(string input, out object output)
+        public  bool ParseInt(string input, out object output)
         {
             int value;
             bool result = int.TryParse(input, out value);
@@ -95,7 +125,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseUInt(string input, out object output)
+        public  bool ParseUInt(string input, out object output)
         {
             uint value;
             bool result = uint.TryParse(input, out value);
@@ -104,7 +134,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseLong(string input, out object output)
+        public  bool ParseLong(string input, out object output)
         {
             long value;
             bool result =
@@ -117,7 +147,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseULong(string input, out object output)
+        public  bool ParseULong(string input, out object output)
         {
             ulong value;
             bool result =
@@ -130,7 +160,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseByte(string input, out object output)
+        public  bool ParseByte(string input, out object output)
         {
             byte value;
             bool result = byte.TryParse(input, out value);
@@ -139,7 +169,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseSByte(string input, out object output)
+        public  bool ParseSByte(string input, out object output)
         {
             sbyte value;
             bool result = sbyte.TryParse(input, out value);
@@ -148,7 +178,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseShort(string input, out object output)
+        public  bool ParseShort(string input, out object output)
         {
             short value;
             bool result = short.TryParse(input, out value);
@@ -157,7 +187,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseUShort(string input, out object output)
+        public  bool ParseUShort(string input, out object output)
         {
             ushort value;
             bool result = ushort.TryParse(input, out value);
@@ -166,7 +196,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseChar(string input, out object output)
+        public  bool ParseChar(string input, out object output)
         {
             char value;
             bool result = char.TryParse(input, out value);
@@ -175,7 +205,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseFloat(string input, out object output)
+        public  bool ParseFloat(string input, out object output)
         {
             float value;
             bool result =
@@ -188,7 +218,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseDouble(string input, out object output)
+        public  bool ParseDouble(string input, out object output)
         {
             double value;
             bool result =
@@ -201,7 +231,7 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseDecimal(string input, out object output)
+        public  bool ParseDecimal(string input, out object output)
         {
             decimal value;
             bool result =
@@ -214,87 +244,87 @@ namespace DragynGames
             return result;
         }
 
-        public static bool ParseVector2(string input, out object output)
+        public  bool ParseVector2(string input, out object output)
         {
             return ParseVector(input, typeof(Vector2), out output);
         }
 
-        public static bool ParseVector3(string input, out object output)
+        public  bool ParseVector3(string input, out object output)
         {
             return ParseVector(input, typeof(Vector3), out output);
         }
 
-        public static bool ParseVector4(string input, out object output)
+        public  bool ParseVector4(string input, out object output)
         {
             return ParseVector(input, typeof(Vector4), out output);
         }
 
-        public static bool ParseQuaternion(string input, out object output)
+        public  bool ParseQuaternion(string input, out object output)
         {
             return ParseVector(input, typeof(Quaternion), out output);
         }
 
-        public static bool ParseColor(string input, out object output)
+        public  bool ParseColor(string input, out object output)
         {
             return ParseVector(input, typeof(Color), out output);
         }
 
-        public static bool ParseColor32(string input, out object output)
+        public  bool ParseColor32(string input, out object output)
         {
             return ParseVector(input, typeof(Color32), out output);
         }
 
-        public static bool ParseRect(string input, out object output)
+        public  bool ParseRect(string input, out object output)
         {
             return ParseVector(input, typeof(Rect), out output);
         }
 
-        public static bool ParseRectOffset(string input, out object output)
+        public  bool ParseRectOffset(string input, out object output)
         {
             return ParseVector(input, typeof(RectOffset), out output);
         }
 
-        public static bool ParseBounds(string input, out object output)
+        public  bool ParseBounds(string input, out object output)
         {
             return ParseVector(input, typeof(Bounds), out output);
         }
 
 #if UNITY_2017_2_OR_NEWER
-        public static bool ParseVector2Int(string input, out object output)
+        public  bool ParseVector2Int(string input, out object output)
         {
             return ParseVector(input, typeof(Vector2Int), out output);
         }
 
-        public static bool ParseVector3Int(string input, out object output)
+        public  bool ParseVector3Int(string input, out object output)
         {
             return ParseVector(input, typeof(Vector3Int), out output);
         }
 
-        public static bool ParseRectInt(string input, out object output)
+        public  bool ParseRectInt(string input, out object output)
         {
             return ParseVector(input, typeof(RectInt), out output);
         }
 
-        public static bool ParseBoundsInt(string input, out object output)
+        public  bool ParseBoundsInt(string input, out object output)
         {
             return ParseVector(input, typeof(BoundsInt), out output);
         }
 #endif
 
-        public static bool ParseGameObject(string input, out object output)
+        public  bool ParseGameObject(string input, out object output)
         {
             output = input == "null" ? null : GameObject.Find(input);
             return true;
         }
 
-        public static bool ParseComponent(string input, Type componentType, out object output)
+        public  bool ParseComponent(string input, Type componentType, out object output)
         {
             GameObject gameObject = input == "null" ? null : GameObject.Find(input);
             output = gameObject ? gameObject.GetComponent(componentType) : null;
             return true;
         }
 
-        public static bool ParseEnum(string input, Type enumType, out object output)
+        public  bool ParseEnum(string input, Type enumType, out object output)
         {
             const int NONE = 0, OR = 1, AND = 2;
 
@@ -358,7 +388,7 @@ namespace DragynGames
             return true;
         }
 
-        public static bool ParseArray(string input, Type arrayType, out object output)
+        public  bool ParseArray(string input, Type arrayType, out object output)
         {
             List<string> valuesToParse = new List<string>(2);
             FetchArgumentsFromCommand(input, valuesToParse);
@@ -395,7 +425,7 @@ namespace DragynGames
         }
 
         // Create a vector of specified type (fill the blank slots with 0 or ignore unnecessary slots)
-        private static bool ParseVector(string input, Type vectorType, out object output)
+        private  bool ParseVector(string input, Type vectorType, out object output)
         {
             List<string> tokens = new List<string>(input.Replace(',', ' ').Trim().Split(' '));
             for (int i = tokens.Count - 1; i >= 0; i--)
@@ -582,17 +612,17 @@ namespace DragynGames
             return true;
         }
 
-        internal static void RemoveType(Type type)
+        internal  void RemoveType(Type type)
         {
             parseFunctions.Remove(type);
         }
 
-        internal static void AddParser(Type type, ParseFunction parseFunction)
+        internal  void AddParser(Type type, ParseFunction parseFunction)
         {
             parseFunctions[type] = parseFunction;
         }
 
-        internal static bool HasParserForType(Type parameterType)
+        internal  bool HasParserForType(Type parameterType)
         {
             return parseFunctions.ContainsKey(parameterType);
         }
