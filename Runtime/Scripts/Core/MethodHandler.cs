@@ -465,7 +465,7 @@ namespace DragynGames.Console
 
         
 #region RemoveCommand overloads
-        public static void RemoveCommand<T1>(Action<T1> method)
+        public void RemoveCommand<T1>(Action<T1> method)
         {
             RemoveCommand(method.Method);
         }
@@ -526,7 +526,7 @@ namespace DragynGames.Console
                 }
             }
         }
-
+#endregion
         // Returns the first command that starts with the entered argument
         public string GetAutoCompleteCommand(string commandStart, string previousSuggestion)
         {
@@ -566,7 +566,7 @@ namespace DragynGames.Console
         }
 
         // Parse the command and try to execute it
-        public void ExecuteCommand(string command)
+        public void TryExecuteCommand(string command)
         {
             if (command == null)
                 return;
