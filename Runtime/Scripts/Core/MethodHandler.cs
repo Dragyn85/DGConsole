@@ -172,6 +172,13 @@ namespace DragynGames.Console
 
         #region AddCommand overloads
 
+        // Add a command related with a static method (i.e. no instance is required to call the method)
+        public void AddCommandStatic(string command, string description, string methodName, Type ownerType,
+            params string[] parameterNames)
+        {
+            AddCommand(command, description, methodName, ownerType, null, parameterNames);
+        }
+
         // Add a command that can be related to either a static or an instance method
         public void AddCommand(string command, string description, Action method)
         {
@@ -294,22 +301,22 @@ namespace DragynGames.Console
 
         // Create a new command and set its properties
         private void AddCommand(string command, string description, string methodName, Type ownerType,
-            bool isInstanced, string[] parameterNames)
+            object instance, string[] parameterNames)
         {
             // Get the method from the class
             MethodInfo method = ownerType.GetMethod(methodName,
                 BindingFlags.Public | BindingFlags.NonPublic |
-                (isInstanced ? BindingFlags.Instance : BindingFlags.Static));
+                (instance != null ? BindingFlags.Instance : BindingFlags.Static));
             if (method == null)
             {
                 Debug.LogError(methodName + " does not exist in " + ownerType);
                 return;
             }
-            
-            AddCommand(command, description, method, !method.IsStatic, parameterNames);
+
+            AddCommand(command, description, method, instance, parameterNames);
         }
 
-        private void AddCommand(string command, string description, MethodInfo method, bool instance,
+        private void AddCommand(string command, string description, MethodInfo method, object instance,
             string[] parameterNames)
         {
             if (string.IsNullOrEmpty(command))

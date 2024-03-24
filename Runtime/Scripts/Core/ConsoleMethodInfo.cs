@@ -24,7 +24,7 @@ namespace DragynGames
             this.parameters = parameters;
             this.isInstancedMethod = isInstancedMethod;
         }
-        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, bool instance, string command,
+        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
             string signature, string[] parameters)
         {
             this.method = method;
