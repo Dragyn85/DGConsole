@@ -410,7 +410,7 @@ namespace DragynGames
         {
             List<string> valuesToParse = new List<string>(2);
             
-            FetchArgumentsFromCommand(input, valuesToParse);
+            SplitIntoArgumentsForCommand(input, valuesToParse);
 
             IList result = (IList)Activator.CreateInstance(arrayType, new object[1] { valuesToParse.Count });
             output = result;
@@ -648,7 +648,7 @@ namespace DragynGames
 
         #endregion
         
-        public static void FetchArgumentsFromCommand(string command, List<string> commandArguments)
+        public static void SplitIntoArgumentsForCommand(string command, List<string> commandArguments)
         {
             for (int i = 0; i < command.Length; i++)
             {
@@ -671,6 +671,7 @@ namespace DragynGames
                 }
             }
         }
+        
         // Find the index of the delimiter group that 'c' belongs to
         internal static int IndexOfDelimiterGroup(char c)
         {

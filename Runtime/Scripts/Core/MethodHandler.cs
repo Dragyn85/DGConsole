@@ -23,6 +23,7 @@ namespace DragynGames.Console
     public class MethodHandler
     {
         public static event Action LongMessageAdded;
+        private const string MONOCOMMANDINDICATOR = ">";
 
         public delegate bool ParseFunction(string input, out object output);
 
@@ -202,7 +203,7 @@ namespace DragynGames.Console
         #region AddCommand overloads
 
         // Add a command related with a static method (i.e. no instance is required to call the method)
-        public void AddCommandStatic(string command, string description, string methodName, Type ownerType,
+        public static void AddCommandStatic(string command, string description, string methodName, Type ownerType,
             params string[] parameterNames)
         {
             AddCommand(command, description, methodName, ownerType, null, parameterNames);
@@ -219,7 +220,7 @@ namespace DragynGames.Console
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand<T1>(string command, string description, Func<T1> method, bool instanced)
+        public static void AddCommand<T1>(string command, string description, Func<T1> method, bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
@@ -229,66 +230,67 @@ namespace DragynGames.Console
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method, bool instanced)
+        public static void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method, bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
+        public static void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
             bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method, bool instanced)
-        {
-            AddCommand(command, description, method.Method, instanced, method.Target, null);
-        }
-
-        public void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
+        public static void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method,
             bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
+        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
             bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
+        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
+            bool instanced)
+        {
+            AddCommand(command, description, method.Method, instanced, method.Target, null);
+        }
+
+        public static void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
             Func<T1, T2, T3, T4, T5> method, bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
-        public void AddCommand(string command, string description, Delegate method, bool instanced)
+        public static void AddCommand(string command, string description, Delegate method, bool instanced)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, null);
         }
 
         // Add a command with custom parameter names
-        public void AddCommand<T1>(string command, string description, Action<T1> method, bool instanced,
+        public static void AddCommand<T1>(string command, string description, Action<T1> method, bool instanced,
             string parameterName)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, new string[1] {parameterName});
         }
 
-        public void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method, bool instanced,
+        public static void AddCommand<T1, T2>(string command, string description, Action<T1, T2> method, bool instanced,
             string parameterName1, string parameterName2)
         {
             AddCommand(command, description, method.Method, instanced, method.Target,
                 new string[2] {parameterName1, parameterName2});
         }
 
-        public void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method, bool instanced,
+        public static void AddCommand<T1, T2>(string command, string description, Func<T1, T2> method, bool instanced,
             string parameterName)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, new string[1] {parameterName});
         }
 
-        public void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
+        public static void AddCommand<T1, T2, T3>(string command, string description, Action<T1, T2, T3> method,
             bool instanced,
             string parameterName1, string parameterName2, string parameterName3)
         {
@@ -296,14 +298,15 @@ namespace DragynGames.Console
                 new string[3] {parameterName1, parameterName2, parameterName3});
         }
 
-        public void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method, bool instanced,
+        public static void AddCommand<T1, T2, T3>(string command, string description, Func<T1, T2, T3> method,
+            bool instanced,
             string parameterName1, string parameterName2)
         {
             AddCommand(command, description, method.Method, instanced, method.Target,
                 new string[2] {parameterName1, parameterName2});
         }
 
-        public void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
+        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Action<T1, T2, T3, T4> method,
             bool instanced,
             string parameterName1, string parameterName2, string parameterName3, string parameterName4)
         {
@@ -311,7 +314,7 @@ namespace DragynGames.Console
                 new string[4] {parameterName1, parameterName2, parameterName3, parameterName4});
         }
 
-        public void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
+        public static void AddCommand<T1, T2, T3, T4>(string command, string description, Func<T1, T2, T3, T4> method,
             bool instanced,
             string parameterName1, string parameterName2, string parameterName3)
         {
@@ -319,7 +322,7 @@ namespace DragynGames.Console
                 new string[3] {parameterName1, parameterName2, parameterName3});
         }
 
-        public void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
+        public static void AddCommand<T1, T2, T3, T4, T5>(string command, string description,
             Func<T1, T2, T3, T4, T5> method, bool instanced, string parameterName1, string parameterName2,
             string parameterName3,
             string parameterName4)
@@ -328,7 +331,7 @@ namespace DragynGames.Console
                 new string[4] {parameterName1, parameterName2, parameterName3, parameterName4});
         }
 
-        public void AddCommand(string command, string description, bool instanced, Delegate method,
+        public static void AddCommand(string command, string description, bool instanced, Delegate method,
             params string[] parameterNames)
         {
             AddCommand(command, description, method.Method, instanced, method.Target, parameterNames);
@@ -337,7 +340,7 @@ namespace DragynGames.Console
         #endregion
 
         // Create a new command and set its properties
-        private void AddCommand(string command, string description, string methodName, Type ownerType,
+        private static void AddCommand(string command, string description, string methodName, Type ownerType,
             object instance, string[] parameterNames)
         {
             // Get the method from the class
@@ -609,23 +612,47 @@ namespace DragynGames.Console
             return result;
         }
 
-        // Parse the command and try to execute it
+        /// <summary>
+        /// Parse the command and try to execute it
+        /// </summary>
+        /// <param name="command"></param>
         public void TryExecuteCommand(string command)
         {
-            if (command == null)
-                return;
+            string objectName;
+            List<GameObject> gameobjectsWithCorrectName = new List<GameObject>();
+            bool isGameObject = command.StartsWith(MONOCOMMANDINDICATOR);
+            if (isGameObject)
+            {
+                command = command.Substring(1);
+            }
 
             command = command.Trim();
 
-            if (command.Length == 0)
+            if (command.Length == 0 || string.IsNullOrEmpty(command))
+            {
                 return;
+            }
 
             // Split the command's arguments
             commandArguments.Clear();
-            CommandTypeParser.FetchArgumentsFromCommand(command, commandArguments);
+            CommandTypeParser.SplitIntoArgumentsForCommand(command, commandArguments);
+
+            if (isGameObject)
+            {
+                objectName = commandArguments.Last();
+                commandArguments.Remove(commandArguments.Last());
+                
+                gameobjectsWithCorrectName = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID).Where(t => t.name == objectName).ToList();
+                if (gameobjectsWithCorrectName.Count == 0)
+                {
+                    Debug.LogWarning("Couldn't find object with name: " + objectName);
+                    return;
+                }
+            }
 
             // Find all matching commands
             matchingMethods.Clear();
+
             bool parameterCountMismatch = false;
             int commandIndex = FindCommandIndex(commandArguments[0]);
             if (commandIndex >= 0)
@@ -735,6 +762,14 @@ namespace DragynGames.Console
                 Debug.LogWarning(!string.IsNullOrEmpty(errorMessage) ? errorMessage : "ERROR: something went wrong");
             else
             {
+                if (isGameObject)
+                {
+                    var type = methodToExecute.method.DeclaringType;
+                    //Get the first monoObject as type
+                    var obj =gameobjectsWithCorrectName[0].GetComponent(type);
+                    
+                    RegisterObjectInstance(obj);
+                }
                 ExecuteInstanceMethodIfAvailable(methodToExecute, parameters);
             }
         }
@@ -743,17 +778,18 @@ namespace DragynGames.Console
         {
             methodToExecute.TryGetInstnace(out object instance);
 
-            if(instance == null && IsMethodInMonoBehaviourSubclass(methodToExecute.method))
+            if (instance == null && IsMethodInMonoBehaviourSubclass(methodToExecute.method))
             {
                 var type = methodToExecute.method.DeclaringType;
                 var obj = GameObject.FindFirstObjectByType(type);
-                
+
                 if (obj != null)
                 {
                     RegisterObjectInstance(obj);
                     methodToExecute.TryGetInstnace(out instance);
                 }
             }
+
             // Execute the method associated with the command
             object result = methodToExecute.method.Invoke(instance, parameters);
             if (methodToExecute.method.ReturnType != typeof(void))
@@ -955,6 +991,15 @@ namespace DragynGames.Console
         public static List<ConsoleMethodInfo> GetMethods()
         {
             return methods;
+        }
+
+        public static async void FindCommandsStartingWithAsync(string trimStart)
+        {
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                List<ConsoleMethodInfo> matchingCommands = new List<ConsoleMethodInfo>();
+                FindCommands(trimStart, true, matchingCommands);
+            });
         }
     }
 }
