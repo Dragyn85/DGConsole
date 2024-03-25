@@ -1,5 +1,6 @@
 using System;
 using System.Reflection;
+using UnityEngine;
 
 namespace DragynGames
 {
@@ -7,23 +8,25 @@ namespace DragynGames
     {
         public readonly MethodInfo method;
         public readonly Type[] parameterTypes;
-        public readonly object instance;
-        public readonly bool isInstancedMethod;
         public readonly string command;
         public readonly string signature;
         public readonly string[] parameters;
+        
+        private object instance = null;
+        
+        public  bool Instanced => instance != null && !instance.Equals(null);
 
-        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
-            string signature,bool isInstancedMethod, string[] parameters)
+        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes,
+            string command,
+            string signature, string[] parameters)
         {
             this.method = method;
             this.parameterTypes = parameterTypes;
-            this.instance = instance;
             this.command = command;
             this.signature = signature;
             this.parameters = parameters;
-            this.isInstancedMethod = isInstancedMethod;
         }
+
         public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
             string signature, string[] parameters)
         {
@@ -33,14 +36,28 @@ namespace DragynGames
             this.command = command;
             this.signature = signature;
             this.parameters = parameters;
-            this.isInstancedMethod = false;
+            this.instance = instance;
         }
+
         public bool IsValid()
         {
-            if (!method.IsStatic && (instance == null || instance.Equals(null)))
-                return false;
+            //if (!method.IsStatic && (instance == null || instance.Equals(null)))
+            //{
+            //    return false;
+            //}
+                
 
             return true;
+        }
+
+        public bool TryGetInstnace(out object instance)
+        {
+            instance = this.instance;
+            return instance != null && !instance.Equals(null);
+        }
+        public void SetInstance(object instace)
+        {
+            this.instance = instace;
         }
     }
 }

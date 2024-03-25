@@ -8,14 +8,11 @@ namespace DragynGames
 {
     public class CommandTypeParser
     {
-        private readonly Dictionary<Type, ParseFunction> parseFunctions;
-        private readonly Action<string,List<string>> FetchArgumentsFromCommand;
-
-
-        public CommandTypeParser(Action<string,List<string>> convertCommandStringToArguments)
-        {
-            FetchArgumentsFromCommand = convertCommandStringToArguments;
-            parseFunctions = new Dictionary<Type, ParseFunction>()
+        
+        // Command parameter delimeter groups
+        private static readonly string[] inputDelimiters = new string[] {"\"\"", "''", "{}", "()", "[]"};
+        
+        private static readonly Dictionary<Type, ParseFunction> parseFunctions = new Dictionary<Type, ParseFunction>()
             {
                 {typeof(string), ParseString},
                 {typeof(bool), ParseBool},
@@ -48,9 +45,8 @@ namespace DragynGames
                 {typeof(BoundsInt), ParseBoundsInt},
 #endif
             };
-        }
 
-        public void AddCustomParameterType(Type type, ParseFunction parseFunction,
+        public static void AddCustomParameterType(Type type, ParseFunction parseFunction,
             string typeReadableName = null)
         {
             if (type == null)
@@ -72,7 +68,7 @@ namespace DragynGames
         
         
 
-        public  bool ParseArgument(string input, Type argumentType, out object output)
+        public static bool ParseArgument(string input, Type argumentType, out object output)
         {
             ParseFunction parseFunction;
             if (parseFunctions.TryGetValue(argumentType, out parseFunction))
@@ -90,7 +86,7 @@ namespace DragynGames
             }
         }
         
-        public bool IsSupportedArrayType(Type type)
+        public static bool IsSupportedArrayType(Type type)
         {
             if (type.IsArray)
             {
@@ -113,13 +109,13 @@ namespace DragynGames
         }
 
         #region Initial Parsers
-        public  bool ParseString(string input, out object output)
+        public static bool ParseString(string input, out object output)
         {
             output = input;
             return true;
         }
 
-        public  bool ParseBool(string input, out object output)
+        public static bool ParseBool(string input, out object output)
         {
             if (input == "1" || input.ToLowerInvariant() == "true")
             {
@@ -137,7 +133,7 @@ namespace DragynGames
             return false;
         }
 
-        public  bool ParseInt(string input, out object output)
+        public static bool ParseInt(string input, out object output)
         {
             int value;
             bool result = int.TryParse(input, out value);
@@ -146,7 +142,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseUInt(string input, out object output)
+        public static bool ParseUInt(string input, out object output)
         {
             uint value;
             bool result = uint.TryParse(input, out value);
@@ -155,7 +151,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseLong(string input, out object output)
+        public static bool ParseLong(string input, out object output)
         {
             long value;
             bool result =
@@ -168,7 +164,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseULong(string input, out object output)
+        public static bool ParseULong(string input, out object output)
         {
             ulong value;
             bool result =
@@ -181,7 +177,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseByte(string input, out object output)
+        public static bool ParseByte(string input, out object output)
         {
             byte value;
             bool result = byte.TryParse(input, out value);
@@ -190,7 +186,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseSByte(string input, out object output)
+        public static bool ParseSByte(string input, out object output)
         {
             sbyte value;
             bool result = sbyte.TryParse(input, out value);
@@ -199,7 +195,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseShort(string input, out object output)
+        public static bool ParseShort(string input, out object output)
         {
             short value;
             bool result = short.TryParse(input, out value);
@@ -208,7 +204,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseUShort(string input, out object output)
+        public static bool ParseUShort(string input, out object output)
         {
             ushort value;
             bool result = ushort.TryParse(input, out value);
@@ -217,7 +213,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseChar(string input, out object output)
+        public static bool ParseChar(string input, out object output)
         {
             char value;
             bool result = char.TryParse(input, out value);
@@ -226,7 +222,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseFloat(string input, out object output)
+        public static bool ParseFloat(string input, out object output)
         {
             float value;
             bool result =
@@ -239,7 +235,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseDouble(string input, out object output)
+        public static bool ParseDouble(string input, out object output)
         {
             double value;
             bool result =
@@ -252,7 +248,7 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseDecimal(string input, out object output)
+        public static bool ParseDecimal(string input, out object output)
         {
             decimal value;
             bool result =
@@ -265,87 +261,87 @@ namespace DragynGames
             return result;
         }
 
-        public  bool ParseVector2(string input, out object output)
+        public static bool ParseVector2(string input, out object output)
         {
             return ParseVector(input, typeof(Vector2), out output);
         }
 
-        public  bool ParseVector3(string input, out object output)
+        public static bool ParseVector3(string input, out object output)
         {
             return ParseVector(input, typeof(Vector3), out output);
         }
 
-        public  bool ParseVector4(string input, out object output)
+        public static bool ParseVector4(string input, out object output)
         {
             return ParseVector(input, typeof(Vector4), out output);
         }
 
-        public  bool ParseQuaternion(string input, out object output)
+        public static bool ParseQuaternion(string input, out object output)
         {
             return ParseVector(input, typeof(Quaternion), out output);
         }
 
-        public  bool ParseColor(string input, out object output)
+        public static bool ParseColor(string input, out object output)
         {
             return ParseVector(input, typeof(Color), out output);
         }
 
-        public  bool ParseColor32(string input, out object output)
+        public static bool ParseColor32(string input, out object output)
         {
             return ParseVector(input, typeof(Color32), out output);
         }
 
-        public  bool ParseRect(string input, out object output)
+        public static bool ParseRect(string input, out object output)
         {
             return ParseVector(input, typeof(Rect), out output);
         }
 
-        public  bool ParseRectOffset(string input, out object output)
+        public static bool ParseRectOffset(string input, out object output)
         {
             return ParseVector(input, typeof(RectOffset), out output);
         }
 
-        public  bool ParseBounds(string input, out object output)
+        public static bool ParseBounds(string input, out object output)
         {
             return ParseVector(input, typeof(Bounds), out output);
         }
 
 #if UNITY_2017_2_OR_NEWER
-        public  bool ParseVector2Int(string input, out object output)
+        public static bool ParseVector2Int(string input, out object output)
         {
             return ParseVector(input, typeof(Vector2Int), out output);
         }
 
-        public  bool ParseVector3Int(string input, out object output)
+        public static bool ParseVector3Int(string input, out object output)
         {
             return ParseVector(input, typeof(Vector3Int), out output);
         }
 
-        public  bool ParseRectInt(string input, out object output)
+        public static bool ParseRectInt(string input, out object output)
         {
             return ParseVector(input, typeof(RectInt), out output);
         }
 
-        public  bool ParseBoundsInt(string input, out object output)
+        public static bool ParseBoundsInt(string input, out object output)
         {
             return ParseVector(input, typeof(BoundsInt), out output);
         }
 #endif
 
-        public  bool ParseGameObject(string input, out object output)
+        public static bool ParseGameObject(string input, out object output)
         {
             output = input == "null" ? null : GameObject.Find(input);
             return true;
         }
 
-        public  bool ParseComponent(string input, Type componentType, out object output)
+        public static bool ParseComponent(string input, Type componentType, out object output)
         {
             GameObject gameObject = input == "null" ? null : GameObject.Find(input);
             output = gameObject ? gameObject.GetComponent(componentType) : null;
             return true;
         }
 
-        public  bool ParseEnum(string input, Type enumType, out object output)
+        public static bool ParseEnum(string input, Type enumType, out object output)
         {
             const int NONE = 0, OR = 1, AND = 2;
 
@@ -409,9 +405,10 @@ namespace DragynGames
             return true;
         }
 
-        public  bool ParseArray(string input, Type arrayType, out object output)
+        public static bool ParseArray(string input, Type arrayType, out object output)
         {
             List<string> valuesToParse = new List<string>(2);
+            
             FetchArgumentsFromCommand(input, valuesToParse);
 
             IList result = (IList)Activator.CreateInstance(arrayType, new object[1] { valuesToParse.Count });
@@ -446,7 +443,7 @@ namespace DragynGames
         }
 
         // Create a vector of specified type (fill the blank slots with 0 or ignore unnecessary slots)
-        private  bool ParseVector(string input, Type vectorType, out object output)
+        private static bool ParseVector(string input, Type vectorType, out object output)
         {
             List<string> tokens = new List<string>(input.Replace(',', ' ').Trim().Split(' '));
             for (int i = tokens.Count - 1; i >= 0; i--)
@@ -638,17 +635,82 @@ namespace DragynGames
             parseFunctions.Remove(type);
         }
 
-        internal  void AddParser(Type type, ParseFunction parseFunction)
+        internal static void AddParser(Type type, ParseFunction parseFunction)
         {
             parseFunctions[type] = parseFunction;
         }
 
-        internal  bool HasParserForType(Type parameterType)
+        internal static bool HasParserForType(Type parameterType)
         {
             return parseFunctions.ContainsKey(parameterType);
         }
 
         #endregion
+        
+        public static void FetchArgumentsFromCommand(string command, List<string> commandArguments)
+        {
+            for (int i = 0; i < command.Length; i++)
+            {
+                if (char.IsWhiteSpace(command[i]))
+                    continue;
+
+                int delimiterIndex = IndexOfDelimiterGroup(command[i]);
+                if (delimiterIndex >= 0)
+                {
+                    int endIndex = IndexOfDelimiterGroupEnd(command, delimiterIndex, i + 1);
+                    commandArguments.Add(command.Substring(i + 1, endIndex - i - 1));
+                    i = (endIndex < command.Length - 1 && command[endIndex + 1] == ',') ? endIndex + 1 : endIndex;
+                }
+                else
+                {
+                    int endIndex = IndexOfChar(command, ' ', i + 1);
+                    commandArguments.Add(command.Substring(i,
+                        command[endIndex - 1] == ',' ? endIndex - 1 - i : endIndex - i));
+                    i = endIndex;
+                }
+            }
+        }
+        // Find the index of the delimiter group that 'c' belongs to
+        internal static int IndexOfDelimiterGroup(char c)
+        {
+            for (int i = 0; i < inputDelimiters.Length; i++)
+            {
+                if (c == inputDelimiters[i][0])
+                    return i;
+            }
+
+            return -1;
+        }
+
+        internal static int IndexOfDelimiterGroupEnd(string command, int delimiterIndex, int startIndex)
+        {
+            char startChar = inputDelimiters[delimiterIndex][0];
+            char endChar = inputDelimiters[delimiterIndex][1];
+
+            // Check delimiter's depth for array support (e.g. [[1 2] [3 4]] for Vector2 array)
+            int depth = 1;
+
+            for (int i = startIndex; i < command.Length; i++)
+            {
+                char c = command[i];
+                if (c == endChar && --depth <= 0)
+                    return i;
+                else if (c == startChar)
+                    depth++;
+            }
+
+            return command.Length;
+        }
+        
+        // Find the index of char in the string, or return the length of string instead of -1
+        internal static int IndexOfChar(string command, char c, int startIndex)
+        {
+            int result = command.IndexOf(c, startIndex);
+            if (result < 0)
+                result = command.Length;
+
+            return result;
+        }
         
         
     }
