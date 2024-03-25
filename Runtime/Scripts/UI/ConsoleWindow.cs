@@ -1,6 +1,7 @@
 using PlasticPipe.PlasticProtocol.Messages;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,9 +13,9 @@ namespace DragynGames.Console.UI
         [Header("Visibility")]
         [SerializeField] KeyCode toggleVisabilty = KeyCode.L;
         [SerializeField, Range(0, 1)] float visbleAlpha = 1;
-        
 
-       
+
+
         [Space(10)]
         [Header("Message area")]
         [SerializeField] Transform windowContent;
@@ -30,8 +31,11 @@ namespace DragynGames.Console.UI
         private bool visible;
         private CanvasGroup canvasGroup;
 
+        [SerializeField] Assembly[] assembly;
+        MethodHandler methodHandler;
         private void Awake()
         {
+            methodHandler = new MethodHandler();
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             AddListeners();
@@ -43,7 +47,7 @@ namespace DragynGames.Console.UI
             inputField.onValueChanged.AddListener(inputField_OnChanged);
             inputField.onDeselect.AddListener(HandleDeselect);
             inputField.onEndEdit.AddListener(HandleDeselect);
-            MethodHandler.OnSearchComplete += ShowAutocomplete;
+            // MethodHandler.OnSearchComplete += ShowAutocomplete;
         }
 
         private void HandleDeselect(string text)
@@ -66,7 +70,7 @@ namespace DragynGames.Console.UI
                 return;
             }
 
-            MethodHandler.FindMethodsStartingAsync(arg0.TrimStart(commandPrefix));
+            //MethodHandler.FindMethodsStartingAsync(arg0.TrimStart(commandPrefix));
 
         }
 
@@ -82,10 +86,13 @@ namespace DragynGames.Console.UI
 
             if (IsCommand(consoleInput))
             {
-                string response = MethodHandler.ExecuteMethod(consoleInput.TrimStart(commandPrefix));
-                if (!string.IsNullOrEmpty(response))
+                string command = consoleInput.Trim(commandPrefix);
+
+
+                methodHandler.TryExecuteCommand(command);
+                //if (!string.IsNullOrEmpty(response))
                 {
-                    AddMessage(response);
+                    //  AddMessage(response);
                 }
 
             }
@@ -94,7 +101,7 @@ namespace DragynGames.Console.UI
                 AddMessage(consoleInput);
             }
             RemoveTips();
-            
+
         }
 
         private bool IsCommand(string consoleInput)
@@ -115,7 +122,7 @@ namespace DragynGames.Console.UI
         }
         private void Update()
         {
-            if(Input.GetKeyDown(toggleVisabilty))
+            if (Input.GetKeyDown(toggleVisabilty))
             {
                 SetVisability(!visible);
             }
@@ -142,7 +149,7 @@ namespace DragynGames.Console.UI
                 newTip.transform.SetParent(commandTipArea, false);
                 if (i == 5) { break; }
             }
-            int amountOfTime = methodDescriptions.Count > maxNumberOfTips ? maxNumberOfTips:methodDescriptions.Count;
+            int amountOfTime = methodDescriptions.Count > maxNumberOfTips ? maxNumberOfTips : methodDescriptions.Count;
 
             UpdateTipLayout(amountOfTime);
         }
