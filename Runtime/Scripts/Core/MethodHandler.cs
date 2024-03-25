@@ -5,13 +5,11 @@
 
 using UnityEngine;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using Object = UnityEngine.Object;
 #if UNITY_EDITOR && UNITY_2021_1_OR_NEWER
 using SystemInfo = UnityEngine.Device.SystemInfo; // To support Device Simulator on Unity 2021.1+
 #endif
