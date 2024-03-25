@@ -11,7 +11,8 @@ namespace DragynGames
         
         // Command parameter delimeter groups
         private static readonly string[] inputDelimiters = new string[] {"\"\"", "''", "{}", "()", "[]"};
-        
+        public static string[] GetDelimiters() => inputDelimiters;
+
         private static readonly Dictionary<Type, ParseFunction> parseFunctions = new Dictionary<Type, ParseFunction>()
             {
                 {typeof(string), ParseString},
