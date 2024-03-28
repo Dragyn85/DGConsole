@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.Events;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     public class EventCommand : MonoBehaviour
     {

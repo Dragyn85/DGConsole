@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace DragynGames.Console.Demo
+namespace DragynGames.Commands.Demo
 {
     public class DemoObjectInstanceCommand
     {
@@ -9,7 +9,7 @@ namespace DragynGames.Console.Demo
         /// </summary>
         public DemoObjectInstanceCommand()
         {
-            MethodHandler.RegisterObjectInstance(this);
+            CommandManager.RegisterObjectInstance(this);
         }
 
         // If you try using this command without registering the object instance the method wont run as.

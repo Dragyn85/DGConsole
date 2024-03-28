@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace DragynGames.Console.UI
+namespace DragynGames.Commands.UI
 {
     internal class Resize : MonoBehaviour,IPointerDownHandler, IPointerUpHandler
     {

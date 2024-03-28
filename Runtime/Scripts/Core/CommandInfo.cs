@@ -1,33 +1,41 @@
 using System;
 using System.Reflection;
+using DragynGames.Commands;
 using UnityEngine;
 
-namespace DragynGames
+namespace DragynGames.Commands
 {
-    public class ConsoleMethodInfo
+    internal class CommandInfo
     {
         public readonly MethodInfo method;
         public readonly Type[] parameterTypes;
         public readonly string command;
         public readonly string signature;
         public readonly string[] parameters;
-        
+        public readonly string description;
+        public readonly CommandType commandType;
+
         private object instance = null;
-        
-        public  bool Instanced => instance != null && !instance.Equals(null);
 
-        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes,
+        public CommandInfo(MethodInfo method,
+            Type[] parameterTypes,
             string command,
-            string signature, string[] parameters)
+            string signature,
+            string[] parameters,
+            object instance,
+            CommandType commandType)
         {
             this.method = method;
             this.parameterTypes = parameterTypes;
             this.command = command;
             this.signature = signature;
             this.parameters = parameters;
+            this.instance = instance;
+            this.commandType = commandType;
         }
 
-        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
+        
+        /*public CommandInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
             string signature, string[] parameters)
         {
             this.method = method;
@@ -37,7 +45,7 @@ namespace DragynGames
             this.signature = signature;
             this.parameters = parameters;
             this.instance = instance;
-        }
+        }*/
 
         public bool IsValid()
         {
@@ -45,7 +53,7 @@ namespace DragynGames
             //{
             //    return false;
             //}
-                
+
 
             return true;
         }
@@ -55,9 +63,31 @@ namespace DragynGames
             instance = this.instance;
             return instance != null && !instance.Equals(null);
         }
+
         public void SetInstance(object instace)
         {
             this.instance = instace;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || !(obj is CommandInfo))
+                return false;
+            CommandInfo other = (CommandInfo) obj;
+
+            if (!command.Equals(other.command))
+                return false;
+
+            if (parameterTypes.Length != other.parameterTypes.Length)
+                return false;
+
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                if (!parameterTypes[i].Equals(other.parameterTypes[i]))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

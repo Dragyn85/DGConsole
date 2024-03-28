@@ -1,31 +1,30 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     public class ConsoleBuiltInActions
     {
-        public static void AddBuiltInCommands()
+        public static void AddHelpCommands()
         {
-            MethodHandler.AddCommand("help", "Prints all commands", LogAllCommands, true);
-            MethodHandler.AddCommand<string, int>("help", "Prints all matching commands", LogAllCommandsWithName, true);
-            MethodHandler.AddCommand("sysinfo", "Prints system information", LogSystemInfo, true);
+            CommandManager.AddCommand("Help", "Logs all available commands",false,new Func<string>(LogAllCommands));
         }
 
-        // Logs the list of available commands
-        public static void LogAllCommands()
+        public static string LogAllCommands()
         {
-            List<ConsoleMethodInfo> methods = MethodHandler.GetMethods();
+            List<CommandInfo> methods = CommandManager.GetMethods();
             string allCommands = LogHelpMethods.LogAllCommands(methods);
             Debug.Log(allCommands);
+            return allCommands;
         }
 
         // Logs the list of available commands that are either equal to commandName or contain commandName as substring
-        public static void LogAllCommandsWithName(string commandName, int maxResults = 4)
+        internal static void LogAllCommandsWithName(string commandName, int maxResults = 4)
         {
-            List<ConsoleMethodInfo> matchingMethods = new List<ConsoleMethodInfo>(maxResults);
+            List<CommandInfo> matchingMethods = new List<CommandInfo>(maxResults);
             string AllMatchingMethods =
-                LogHelpMethods.LogAllCommandsWithName(commandName, MethodHandler.FindCommands, matchingMethods);
+                LogHelpMethods.LogAllCommandsWithName(commandName, CachedMethodFinder.FindCommands, matchingMethods);
 
             Debug.Log(AllMatchingMethods);
         }

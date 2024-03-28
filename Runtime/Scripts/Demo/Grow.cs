@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace DragynGames.Console.Demo
+namespace DragynGames.Commands.Demo
 {
     public class Grow : MonoBehaviour
     {
