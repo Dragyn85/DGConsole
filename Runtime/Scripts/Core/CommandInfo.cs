@@ -3,7 +3,7 @@ using System.Reflection;
 using DragynGames.Commands;
 using UnityEngine;
 
-namespace DragynGames
+namespace DragynGames.Commands
 {
     internal class CommandInfo
     {
@@ -30,10 +30,12 @@ namespace DragynGames
             this.command = command;
             this.signature = signature;
             this.parameters = parameters;
+            this.instance = instance;
+            this.commandType = commandType;
         }
 
         
-        public CommandInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
+        /*public CommandInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
             string signature, string[] parameters)
         {
             this.method = method;
@@ -43,7 +45,7 @@ namespace DragynGames
             this.signature = signature;
             this.parameters = parameters;
             this.instance = instance;
-        }
+        }*/
 
         public bool IsValid()
         {

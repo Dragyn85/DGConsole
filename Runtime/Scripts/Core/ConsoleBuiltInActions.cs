@@ -6,8 +6,11 @@ namespace DragynGames.Commands
 {
     public class ConsoleBuiltInActions
     {
-        // Logs the list of available commands
-        [ConsoleAction("LogAllCommand", "Logs and returns all available commands")]
+        public static void AddHelpCommands()
+        {
+            CommandManager.AddCommand("Help", "Logs all available commands",false,new Func<string>(LogAllCommands));
+        }
+
         public static string LogAllCommands()
         {
             List<CommandInfo> methods = CommandManager.GetMethods();

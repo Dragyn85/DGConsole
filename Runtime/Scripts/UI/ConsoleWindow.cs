@@ -91,8 +91,12 @@ namespace DragynGames.Commands.UI
 
                 if (commandManager.ExecuteMethod(command, out CommandExecutionResult result))
                 {
-                    string stringResult = result.ReturnedObject.ToString();
-                    AddMessage(stringResult);
+                    if (result.ReturnedObject != null)
+                    {
+                        string stringResult = result.ReturnedObject.ToString();
+                        AddMessage(stringResult);
+                    }
+                    
                 }
                 else
                 {

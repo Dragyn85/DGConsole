@@ -225,7 +225,7 @@ namespace DragynGames.Commands
             if (matchingMethods.Count == 0)
             {
                 string _command = commandArguments[0];
-                FindCommands(_command, !parameterCountMismatch, methods, caseInsensitiveComparer);
+                matchingMethods = FindCommands(_command, !parameterCountMismatch, methods, caseInsensitiveComparer);
 
                 if (matchingMethods.Count == 0)
                     Debug.LogWarning(string.Concat("ERROR: can't find command '", _command, "'"));

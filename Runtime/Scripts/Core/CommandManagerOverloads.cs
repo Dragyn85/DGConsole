@@ -64,7 +64,7 @@ namespace DragynGames.Commands
 
 
         public void RemoveCommand(Delegate method) => RemoveCommand(method.Method);
-
+        
         public void RemoveCommand(MethodInfo method)
         {
             if (method != null)
