@@ -1,11 +1,11 @@
 using System;
 using System.Reflection;
-using DragynGames.Console;
+using DragynGames.Commands;
 using UnityEngine;
 
 namespace DragynGames
 {
-    internal class ConsoleMethodInfo
+    internal class CommandInfo
     {
         public readonly MethodInfo method;
         public readonly Type[] parameterTypes;
@@ -17,7 +17,7 @@ namespace DragynGames
 
         private object instance = null;
 
-        public ConsoleMethodInfo(MethodInfo method,
+        public CommandInfo(MethodInfo method,
             Type[] parameterTypes,
             string command,
             string signature,
@@ -33,7 +33,7 @@ namespace DragynGames
         }
 
         
-        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
+        public CommandInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
             string signature, string[] parameters)
         {
             this.method = method;
@@ -69,9 +69,9 @@ namespace DragynGames
 
         public override bool Equals(object obj)
         {
-            if (obj == null || !(obj is ConsoleMethodInfo))
+            if (obj == null || !(obj is CommandInfo))
                 return false;
-            ConsoleMethodInfo other = (ConsoleMethodInfo) obj;
+            CommandInfo other = (CommandInfo) obj;
 
             if (!command.Equals(other.command))
                 return false;

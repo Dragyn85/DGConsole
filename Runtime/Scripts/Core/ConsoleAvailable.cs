@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class ConsoleAvailable : Attribute {

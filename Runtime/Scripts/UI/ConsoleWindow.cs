@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace DragynGames.Console.UI
+namespace DragynGames.Commands.UI
 {
     internal class ConsoleWindow : MonoBehaviour
     {
@@ -32,10 +32,10 @@ namespace DragynGames.Console.UI
         private CanvasGroup canvasGroup;
 
         [SerializeField] Assembly[] assembly;
-        MethodHandler methodHandler;
+        CommandManager commandManager;
         private void Awake()
         {
-            methodHandler = new MethodHandler();
+            commandManager = new CommandManager();
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             AddListeners();
@@ -70,7 +70,7 @@ namespace DragynGames.Console.UI
                 return;
             }
 
-            MethodHandler.FindCommandsStartingWithAsync(arg0.TrimStart(commandPrefix));
+            CommandManager.FindCommandsStartingWithAsync(arg0.TrimStart(commandPrefix));
 
         }
 
@@ -89,7 +89,15 @@ namespace DragynGames.Console.UI
                 string command = consoleInput.Trim(commandPrefix);
 
 
-                methodHandler.TryExecuteCommand(command);
+                if (commandManager.ExecuteMethod(command, out CommandExecutionResult result))
+                {
+                    string stringResult = result.ReturnedObject.ToString();
+                    AddMessage(stringResult);
+                }
+                else
+                {
+                    AddMessage(result.ExecutionMessage);
+                }
                 //if (!string.IsNullOrEmpty(response))
                 {
                     //  AddMessage(response);

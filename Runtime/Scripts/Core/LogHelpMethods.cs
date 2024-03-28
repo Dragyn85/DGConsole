@@ -1,6 +1,7 @@
-using DragynGames.Console;
+using DragynGames.Commands;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 
 namespace DragynGames
@@ -9,7 +10,7 @@ namespace DragynGames
     {
 
         // Returns the list of available commands
-        internal static string LogAllCommands(List<ConsoleMethodInfo> methods)
+        internal static string LogAllCommands(List<CommandInfo> methods)
         {
             int length = 25;
             for (int i = 0; i < methods.Count; i++)
@@ -31,15 +32,15 @@ namespace DragynGames
         }
 
         // Logs the list of available commands that are either equal to commandName or contain commandName as substring
-        internal static string LogAllCommandsWithName(string commandName, Action<string,bool,List<ConsoleMethodInfo>> FindCommands, List<ConsoleMethodInfo> matchingMethods)
+        internal static string LogAllCommandsWithName(string commandName, Func<string,bool,List<CommandInfo>,CompareInfo,List<CommandInfo>> findCommands, List<CommandInfo> searchedMethods)
         {
-            matchingMethods.Clear();
-
+            List<CommandInfo> matchingMethods = new List<CommandInfo>();
+            CompareInfo compareInfo = CommandManager._settings.caseInsensitiveComparer;
             // First, try to find commands that exactly match the commandName. If there are no such commands, try to find
             // commands that contain commandName as substring
-            FindCommands(commandName, false, matchingMethods);
+            matchingMethods = findCommands(commandName, false,searchedMethods,compareInfo);
             if (matchingMethods.Count == 0)
-                FindCommands(commandName, true, matchingMethods);
+                matchingMethods = findCommands(commandName, false,searchedMethods,compareInfo);
 
             if (matchingMethods.Count == 0)
             {

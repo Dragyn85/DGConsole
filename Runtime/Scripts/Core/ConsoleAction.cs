@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     [AttributeUsage(AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
     public class ConsoleActionAttribute : Attribute

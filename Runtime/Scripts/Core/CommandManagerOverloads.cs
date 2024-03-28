@@ -2,7 +2,7 @@
 using System.Reflection;
 using UnityEngine;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     public partial class CommandManager
     {
@@ -69,10 +69,10 @@ namespace DragynGames.Console
         {
             if (method != null)
             {
-                for (int i = methods.Count - 1; i >= 0; i--)
+                for (int i = sortedCommands.Count - 1; i >= 0; i--)
                 {
-                    if (methods[i].method == method)
-                        methods.RemoveAt(i);
+                    if (sortedCommands[i].method == method)
+                        sortedCommands.RemoveAt(i);
                 }
             }
         }

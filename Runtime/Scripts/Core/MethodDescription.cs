@@ -1,4 +1,4 @@
-﻿namespace DragynGames.Console
+﻿namespace DragynGames.Commands
 {
     public struct MethodDescription {
         public string name;

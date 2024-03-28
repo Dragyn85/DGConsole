@@ -1,11 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using DragynGames.Console;
 using UnityEngine;
-using static DragynGames.Console.MethodHandler;
 
-namespace DragynGames
+
+namespace DragynGames.Commands
 {
     public class CommandTypeParser
     {
@@ -13,7 +12,8 @@ namespace DragynGames
         // Command parameter delimeter groups
         private static readonly string[] inputDelimiters = new string[] {"\"\"", "''", "{}", "()", "[]"};
         public static string[] GetDelimiters() => inputDelimiters;
-
+        public delegate bool ParseFunction(string input, out object output);
+        
         private static readonly Dictionary<Type, ParseFunction> parseFunctions = new Dictionary<Type, ParseFunction>()
             {
                 {typeof(string), ParseString},

@@ -1,9 +1,9 @@
 using System.Collections;
-using DragynGames.Console;
+using DragynGames.Commands;
 using UnityEditor;
 using UnityEngine;
 
-namespace DragynGames.Console.Demo
+namespace DragynGames.Commands.Demo
 {
     public class DemoObject : MonoBehaviour
     {

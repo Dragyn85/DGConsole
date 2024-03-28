@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Reflection;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     internal class CommandDefinitionData
     {
@@ -32,7 +32,7 @@ namespace DragynGames.Console
             {
                 Command = string.IsNullOrEmpty(attribute.Command) ? methodInfo.Name : attribute.Command;
                 Description = string.IsNullOrEmpty(attribute.Description) ? manualCommandCreationInfo.description : attribute.Description;
-                Parameters = attribute.ParameterNames.Length > 0
+                Parameters = attribute.ParameterNames is {Length: > 0}
                     ? attribute.ParameterNames
                     : methodInfo.GetParameters().Select(t => t.Name).ToArray();
             }

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text;
 using UnityEngine;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     public class CachedMethodFinder
     {
@@ -11,8 +11,8 @@ namespace DragynGames.Console
         // - caretIndexIncrements: indices inside "string command" that separate two arguments in the command. This is used to
         //   figure out which argument the caret is standing on
         // - commandName: command's name (first argument)
-        internal void GetCommandSuggestions(string command, IReadOnlyList<ConsoleMethodInfo> methods,
-            List<ConsoleMethodInfo> matchingCommands,
+        internal void GetCommandSuggestions(string command, IReadOnlyList<CommandInfo> methods,
+            List<CommandInfo> matchingCommands,
             List<int> caretIndexIncrements, CompareInfo caseInsensitiveComparer, ref string commandName,
             out int numberOfParameters)
         {
@@ -94,7 +94,7 @@ namespace DragynGames.Console
         }
 
         private void HandleCommandName(string commandName, ref bool commandNameFullyTyped, int numberOfParameters,
-            List<ConsoleMethodInfo> matchingCommands, IReadOnlyList<ConsoleMethodInfo> methods,
+            List<CommandInfo> matchingCommands, IReadOnlyList<CommandInfo> methods,
             CompareInfo caseInsensitiveComparer)
         {
             int commandIndex = FindCommandIndex(commandName, methods, caseInsensitiveComparer);
@@ -120,7 +120,7 @@ namespace DragynGames.Console
             }
         }
 
-        internal static int FindCommandIndex(string command, IReadOnlyList<ConsoleMethodInfo> methods,
+        internal static int FindCommandIndex(string command, IReadOnlyList<CommandInfo> methods,
             CompareInfo caseInsensitiveComparer)
         {
             int min = 0;
@@ -142,7 +142,7 @@ namespace DragynGames.Console
         }
 
         private int MatchAllCommandsStartingWith(string commandName, int commandIndex, int commandLastIndex,
-            IReadOnlyList<ConsoleMethodInfo> methods, CompareInfo caseInsensitiveComparer)
+            IReadOnlyList<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
         {
             if (commandIndex < methods.Count && caseInsensitiveComparer.IsPrefix(methods[commandIndex].command,
                     commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
@@ -162,7 +162,7 @@ namespace DragynGames.Console
         }
 
         private int MatchAllCommandsEqualTo(string commandName, int commandIndex, int commandLastIndex,
-            IReadOnlyList<ConsoleMethodInfo> methods, CompareInfo caseInsensitiveComparer)
+            IReadOnlyList<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
         {
             if (commandIndex < methods.Count && caseInsensitiveComparer.Compare(methods[commandIndex].command,
                     commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
@@ -181,10 +181,10 @@ namespace DragynGames.Console
             return commandLastIndex;
         }
 
-        internal static List<ConsoleMethodInfo> GetMatchingMethods(List<string> commandArguments,
-            List<ConsoleMethodInfo> methods, CompareInfo caseInsensitiveComparer)
+        internal static List<CommandInfo> GetMatchingMethods(List<string> commandArguments,
+            List<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
         {
-            List<ConsoleMethodInfo> matchingMethods = new List<ConsoleMethodInfo>();
+            List<CommandInfo> matchingMethods = new List<CommandInfo>();
             bool parameterCountMismatch = false;
             int commandIndex = FindCommandIndex(commandArguments[0], methods, caseInsensitiveComparer);
 
@@ -253,10 +253,10 @@ namespace DragynGames.Console
             return matchingMethods;
         }
 
-        internal static List<ConsoleMethodInfo> FindCommands(string commandName, bool allowSubstringMatching,
-            List<ConsoleMethodInfo> methods, CompareInfo caseInsensitiveComparer)
+        internal static List<CommandInfo> FindCommands(string commandName, bool allowSubstringMatching,
+            List<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
         {
-            List<ConsoleMethodInfo> matchingCommands = new List<ConsoleMethodInfo>();
+            List<CommandInfo> matchingCommands = new List<CommandInfo>();
             
             if (allowSubstringMatching)
             {

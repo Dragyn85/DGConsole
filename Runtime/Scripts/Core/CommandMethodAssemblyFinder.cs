@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-namespace DragynGames.Console
+namespace DragynGames.Commands
 {
     internal class CommandMethodAssemblyFinder
     {
@@ -26,7 +26,8 @@ namespace DragynGames.Console
                                                                       BindingFlags.NonPublic |
                                                                       BindingFlags.DeclaredOnly))
                         {
-                            methodsToAdd.Add(method);
+                            if (method.GetCustomAttributes(typeof(ConsoleActionAttribute), false).Length > 0)
+                                methodsToAdd.Add(method);
                         }
                     }
                 }
@@ -89,18 +90,18 @@ namespace DragynGames.Console
 
         internal static CommandType FindCommandType(MethodInfo method)
         {
-            CommandType commandType = Console.CommandType.Invalid;
+            CommandType commandType = Commands.CommandType.Invalid;
             if (IsMethodInMonoBehaviourSubclass(method))
             {
-                commandType = Console.CommandType.MonoBehaviour;
+                commandType = Commands.CommandType.MonoBehaviour;
             }
             else if (!method.IsStatic)
             {
-                commandType = Console.CommandType.Instanced;
+                commandType = Commands.CommandType.Instanced;
             }
             else
             {
-                commandType = Console.CommandType.Static;
+                commandType = Commands.CommandType.Static;
             }
 
             return commandType;
