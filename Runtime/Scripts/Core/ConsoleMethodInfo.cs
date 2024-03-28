@@ -1,24 +1,29 @@
 using System;
 using System.Reflection;
+using DragynGames.Console;
 using UnityEngine;
 
 namespace DragynGames
 {
-    public class ConsoleMethodInfo
+    internal class ConsoleMethodInfo
     {
         public readonly MethodInfo method;
         public readonly Type[] parameterTypes;
         public readonly string command;
         public readonly string signature;
         public readonly string[] parameters;
-        
-        private object instance = null;
-        
-        public  bool Instanced => instance != null && !instance.Equals(null);
+        public readonly string description;
+        public readonly CommandType commandType;
 
-        public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes,
+        private object instance = null;
+
+        public ConsoleMethodInfo(MethodInfo method,
+            Type[] parameterTypes,
             string command,
-            string signature, string[] parameters)
+            string signature,
+            string[] parameters,
+            object instance,
+            CommandType commandType)
         {
             this.method = method;
             this.parameterTypes = parameterTypes;
@@ -27,6 +32,7 @@ namespace DragynGames
             this.parameters = parameters;
         }
 
+        
         public ConsoleMethodInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
             string signature, string[] parameters)
         {
@@ -45,7 +51,7 @@ namespace DragynGames
             //{
             //    return false;
             //}
-                
+
 
             return true;
         }
@@ -55,9 +61,31 @@ namespace DragynGames
             instance = this.instance;
             return instance != null && !instance.Equals(null);
         }
+
         public void SetInstance(object instace)
         {
             this.instance = instace;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null || !(obj is ConsoleMethodInfo))
+                return false;
+            ConsoleMethodInfo other = (ConsoleMethodInfo) obj;
+
+            if (!command.Equals(other.command))
+                return false;
+
+            if (parameterTypes.Length != other.parameterTypes.Length)
+                return false;
+
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                if (!parameterTypes[i].Equals(other.parameterTypes[i]))
+                    return false;
+            }
+
+            return true;
         }
     }
 }

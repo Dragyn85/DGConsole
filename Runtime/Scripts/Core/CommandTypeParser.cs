@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DragynGames.Console;
 using UnityEngine;
 using static DragynGames.Console.MethodHandler;
 
@@ -631,7 +632,7 @@ namespace DragynGames
             return true;
         }
 
-        internal  void RemoveType(Type type)
+        internal static void RemoveType(Type type)
         {
             parseFunctions.Remove(type);
         }
@@ -672,6 +673,49 @@ namespace DragynGames
             }
         }
         
+        public static List<string> SplitIntoArgumentsForCommand(string command,out string commandTarget, char objIdentifier)
+        {
+            commandTarget = ExtractTarget(ref command, objIdentifier);
+            
+            List<string> commandArguments = new List<string>();
+            for (int i = 0; i < command.Length; i++)
+            {
+                if (char.IsWhiteSpace(command[i]))
+                    continue;
+
+                int delimiterIndex = IndexOfDelimiterGroup(command[i]);
+                if (delimiterIndex >= 0)
+                {
+                    int endIndex = IndexOfDelimiterGroupEnd(command, delimiterIndex, i + 1);
+                    commandArguments.Add(command.Substring(i + 1, endIndex - i - 1));
+                    i = (endIndex < command.Length - 1 && command[endIndex + 1] == ',') ? endIndex + 1 : endIndex;
+                }
+                else
+                {
+                    int endIndex = IndexOfChar(command, ' ', i + 1);
+                    commandArguments.Add(command.Substring(i,
+                        command[endIndex - 1] == ',' ? endIndex - 1 - i : endIndex - i));
+                    i = endIndex;
+                }
+            }
+
+            return commandArguments;
+        }
+
+        private static string ExtractTarget(ref string command, char objIdentifier)
+        {
+            string commandTarget = null;
+            if (command.Contains(objIdentifier))
+            {
+                // get everything after the object identifier and pass it to commandTarget
+                commandTarget = command.Substring(command.IndexOf(objIdentifier) + 1);
+                // remove the object identifier and everthing behind from the command
+                command = command.Substring(0, command.IndexOf(objIdentifier));
+            }
+
+            return commandTarget;
+        }
+
         // Find the index of the delimiter group that 'c' belongs to
         internal static int IndexOfDelimiterGroup(char c)
         {

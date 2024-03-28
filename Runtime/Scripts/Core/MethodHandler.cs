@@ -38,7 +38,7 @@ namespace DragynGames.Console
         // CompareInfo used for case-insensitive command name comparison
         internal static readonly CompareInfo caseInsensitiveComparer = new CultureInfo("en-US").CompareInfo;
 
-        private CommandTypeParser _commandTypeParser;
+        private static CommandTypeParser _commandTypeParser;
 
         public static void RegisterObjectInstance(object consoleAction)
         {
@@ -113,79 +113,10 @@ namespace DragynGames.Console
         public MethodHandler()
         {
             ConsoleBuiltInActions.AddBuiltInCommands();
-            SearchForCommands();
-        }
-
-        private void SearchForCommands()
-        {
-            List<Assembly> assemblies = UnityBuiltInAssemblyIgnorer.GetAssemblies();
-            foreach (Assembly assembly in assemblies)
+            CommandMethodAssemblyFinder cmaf = new();
+            var commandDefinitions = cmaf.SearchForCommands();
+            foreach (var commandDefinition in commandDefinitions)
             {
-                try
-                {
-                    foreach (Type type in assembly.GetExportedTypes())
-                    {
-                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Static |
-                                                                      BindingFlags.Public |
-                                                                      BindingFlags.NonPublic |
-                                                                      BindingFlags.DeclaredOnly))
-                        {
-                            AddMethodAsCommand(method);
-                        }
-
-                        foreach (MethodInfo method in type.GetMethods(BindingFlags.Instance |
-                                                                      BindingFlags.Public |
-                                                                      BindingFlags.NonPublic |
-                                                                      BindingFlags.DeclaredOnly))
-                        {
-                            AddMethodAsCommand(method, true);
-                        }
-                    }
-                }
-                catch (NotSupportedException)
-                {
-                }
-                catch (System.IO.FileNotFoundException)
-                {
-                }
-                catch (ReflectionTypeLoadException)
-                {
-                }
-                catch (Exception e)
-                {
-                    Debug.LogError("Couldn't search assembly for [ConsoleMethod] attributes: " + assembly.FullName +
-                                   "\n" +
-                                   e.ToString());
-                }
-            }
-        }
-
-        private void AddMethodAsCommand(MethodInfo method, bool instanced = false)
-        {
-            foreach (object attribute in method.GetCustomAttributes(typeof(ConsoleActionAttribute),
-                         false))
-            {
-                ConsoleActionAttribute consoleMethod = attribute as ConsoleActionAttribute;
-                if (consoleMethod != null)
-                {
-                    if (string.IsNullOrEmpty(consoleMethod.Command))
-                    {
-                        ParameterInfo[] paramInfos = method.GetParameters();
-
-                        string[] parameters = paramInfos.Length > 0 ? new string[paramInfos.Length] : null;
-
-                        for (int i = 0; i < paramInfos.Length; i++)
-                        {
-                            ParameterInfo paramInfo = paramInfos[i];
-                            parameters[i] = paramInfo.Name;
-                        }
-
-                        consoleMethod.SetField(method.Name, "", parameters);
-                    }
-
-                    AddCommand(consoleMethod.Command, consoleMethod.Description, method, instanced, null,
-                        consoleMethod.ParameterNames);
-                }
             }
         }
 
@@ -196,7 +127,7 @@ namespace DragynGames.Console
         // Remove a custom Type from the list of recognized command parameter Types
         public void RemoveCustomParameterType(Type type)
         {
-            _commandTypeParser.RemoveType(type);
+            CommandTypeParser.RemoveType(type);
             ReadableTypes.Remove(type);
         }
 
@@ -204,32 +135,61 @@ namespace DragynGames.Console
             object instance,
             string[] parameterNames)
         {
+            var consoleMethodInfo = CreateConsoleMethodInfo(command, description, method, instance, parameterNames);
+
+            var anyEqual = methods.Any(t => !AreMethodsEqual(t.method, method));
+            
+            if (anyEqual)
+            {
+                Debug.LogError($"Method {method.Name} already exists in the list of commands");
+                return;
+            }
+            
+            int commandIndex = FindConsoleMethodInfoIndex(consoleMethodInfo);
+            methods.Insert(commandIndex, consoleMethodInfo);
+        }
+
+        private static ConsoleMethodInfo CreateConsoleMethodInfo(string command, string description, MethodInfo method,
+            object instance, string[] parameterNames)
+        {
+            ConsoleMethodInfo consoleMethodInfo = null;
             if (string.IsNullOrEmpty(command))
             {
                 Debug.LogError("Command name can't be empty!");
-                return;
+                return consoleMethodInfo;
             }
 
             command = command.Trim();
             if (command.IndexOf(' ') >= 0)
             {
                 Debug.LogError("Command name can't contain whitespace: " + command);
-                return;
+                return consoleMethodInfo;
             }
-
-            // Fetch the parameters of the class
+            
+            
             ParameterInfo[] parameters = method.GetParameters();
-            if (parameters == null)
-                parameters = new ParameterInfo[0];
+            
+            var parameterTypes = GetParameterTypes(parameters);
 
-            // Store the parameter types in an array
+            // Create the command
+            string methodSignature = CreateMethodSignature(command, description, parameterNames, parameterTypes, parameters, out var parameterSignatures);
+
+            consoleMethodInfo = new ConsoleMethodInfo(method, parameterTypes, instance, command,
+                methodSignature,
+                parameterSignatures);
+            
+            return consoleMethodInfo;
+        }
+
+        private static Type[] GetParameterTypes(ParameterInfo[] parameters)
+        {
             Type[] parameterTypes = new Type[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
             {
                 if (parameters[i].ParameterType.IsByRef)
                 {
                     Debug.LogError("Command can't have 'out' or 'ref' parameters");
-                    return;
+                    return parameterTypes;
                 }
 
                 Type parameterType = parameters[i].ParameterType;
@@ -241,64 +201,20 @@ namespace DragynGames.Console
                 {
                     Debug.LogError(string.Concat("Parameter ", parameters[i].Name, "'s Type ", parameterType,
                         " isn't supported"));
-                    return;
+                    return parameterTypes;
                 }
             }
 
-            int commandIndex = FindCommandIndex(command);
-            if (commandIndex < 0)
-                commandIndex = ~commandIndex;
-            else
-            {
-                int commandFirstIndex = commandIndex;
-                int commandLastIndex = commandIndex;
+            return parameterTypes;
+        }
 
-                while (commandFirstIndex > 0 && caseInsensitiveComparer.Compare(methods[commandFirstIndex - 1].command,
-                           command, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
-                    commandFirstIndex--;
-                while (commandLastIndex < methods.Count - 1 && caseInsensitiveComparer.Compare(
-                           methods[commandLastIndex + 1].command, command,
-                           CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
-                    commandLastIndex++;
-
-                commandIndex = commandFirstIndex;
-                for (int i = commandFirstIndex; i <= commandLastIndex; i++)
-                {
-                    int parameterCountDiff = methods[i].parameterTypes.Length - parameterTypes.Length;
-                    if (parameterCountDiff <= 0)
-                    {
-                        // We are sorting the commands in 2 steps:
-                        // 1: Sorting by their 'command' names which is handled by FindCommandIndex
-                        // 2: Sorting by their parameter counts which is handled here (parameterCountDiff <= 0)
-                        commandIndex = i + 1;
-
-                        // Check if this command has been registered before and if it is, overwrite that command
-                        if (parameterCountDiff == 0)
-                        {
-                            int j = 0;
-                            while (j < parameterTypes.Length && parameterTypes[j] == methods[i].parameterTypes[j])
-                                j++;
-
-                            if (j >= parameterTypes.Length)
-                            {
-                                commandIndex = i;
-                                commandLastIndex--;
-                                methods.RemoveAt(i--);
-
-                                continue;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Create the command
+        private static string CreateMethodSignature(string command, string description, string[] parameterNames,
+            Type[] parameterTypes, ParameterInfo[] parameters, out string[] parameterSignatures)
+        {
+            string ms;
             StringBuilder methodSignature = new StringBuilder(256);
-            string[] parameterSignatures = new string[parameterTypes.Length];
+            parameterSignatures = new string[parameterTypes.Length];
 
-#if USE_BOLD_COMMAND_SIGNATURES
-            methodSignature.Append("<b>");
-#endif
             methodSignature.Append(command);
 
             if (parameterTypes.Length > 0)
@@ -323,16 +239,58 @@ namespace DragynGames.Console
                 }
             }
 
-#if USE_BOLD_COMMAND_SIGNATURES
-            methodSignature.Append("</b>");
-#endif
-
             if (!string.IsNullOrEmpty(description))
                 methodSignature.Append(": ").Append(description);
+            ms = methodSignature.ToString();
+            return ms;
+        }
 
-            methods.Insert(commandIndex,
-                new ConsoleMethodInfo(method, parameterTypes, instance, command, methodSignature.ToString(),
-                    parameterSignatures));
+        private static int FindConsoleMethodInfoIndex(ConsoleMethodInfo consoleMethodInfo)
+        {
+            string command = consoleMethodInfo.command;
+            Type[] parameterTypes = consoleMethodInfo.parameterTypes;
+
+            int commandIndex =
+                CachedMethodFinder.FindCommandIndex(command, methods.AsReadOnly(), caseInsensitiveComparer);
+            if (commandIndex < 0)
+                commandIndex = ~commandIndex;
+            else
+            {
+                int commandFirstIndex = commandIndex;
+                int commandLastIndex = commandIndex;
+
+                while (commandFirstIndex > 0 && caseInsensitiveComparer.Compare(methods[commandFirstIndex - 1].command,
+                           command, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                    commandFirstIndex--;
+                while (commandLastIndex < methods.Count - 1 && caseInsensitiveComparer.Compare(
+                           methods[commandLastIndex + 1].command, command,
+                           CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                    commandLastIndex++;
+
+                commandIndex = commandFirstIndex;
+                for (int i = commandFirstIndex; i <= commandLastIndex; i++)
+                {
+                    int parameterCountDiff = methods[i].parameterTypes.Length - parameterTypes.Length;
+                    if (parameterCountDiff <= 0)
+                    {
+                        commandIndex = i + 1;
+                        if (parameterCountDiff == 0)
+                        {
+                            int j = 0;
+                            while (j < parameterTypes.Length && parameterTypes[j] == methods[i].parameterTypes[j])
+                                j++;
+
+                            if (j >= parameterTypes.Length)
+                            {
+                                commandIndex = i;
+                                commandLastIndex--;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return commandIndex;
         }
 
         // Remove all commands with the matching command name from the console
@@ -353,7 +311,9 @@ namespace DragynGames.Console
         public string GetAutoCompleteCommand(string commandStart, string previousSuggestion)
         {
             int commandIndex =
-                FindCommandIndex(!string.IsNullOrEmpty(previousSuggestion) ? previousSuggestion : commandStart);
+                CachedMethodFinder.FindCommandIndex(
+                    !string.IsNullOrEmpty(previousSuggestion) ? previousSuggestion : commandStart, methods.AsReadOnly(),
+                    caseInsensitiveComparer);
             if (commandIndex < 0)
             {
                 commandIndex = ~commandIndex;
@@ -416,8 +376,9 @@ namespace DragynGames.Console
             {
                 objectName = commandArguments.Last();
                 commandArguments.Remove(commandArguments.Last());
-                
-                gameobjectsWithCorrectName = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID).Where(t => t.name == objectName).ToList();
+
+                gameobjectsWithCorrectName = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID)
+                    .Where(t => t.name == objectName).ToList();
                 if (gameobjectsWithCorrectName.Count == 0)
                 {
                     Debug.LogWarning("Couldn't find object with name: " + objectName);
@@ -429,7 +390,9 @@ namespace DragynGames.Console
             matchingMethods.Clear();
 
             bool parameterCountMismatch = false;
-            int commandIndex = FindCommandIndex(commandArguments[0]);
+            int commandIndex =
+                CachedMethodFinder.FindCommandIndex(commandArguments[0], methods, caseInsensitiveComparer);
+            
             if (commandIndex >= 0)
             {
                 string _command = commandArguments[0];
@@ -496,8 +459,29 @@ namespace DragynGames.Console
                 return;
             }
 
+            var methodToExecute = FindMatchingMethod(out var parameters);
+
+            if (methodToExecute == null)
+                Debug.LogWarning($"ERROR: something went wrong, could not find method to execute for command {command}");
+            else
+            {
+                if (isGameObject)
+                {
+                    var type = methodToExecute.method.DeclaringType;
+                    //Get the first monoObject as type
+                    var obj = gameobjectsWithCorrectName[0].GetComponent(type);
+
+                    RegisterObjectInstance(obj);
+                }
+
+                ExecuteInstanceMethodIfAvailable(methodToExecute, parameters);
+            }
+        }
+
+        private ConsoleMethodInfo FindMatchingMethod(out object[] parameters)
+        {
             ConsoleMethodInfo methodToExecute = null;
-            object[] parameters = new object[commandArguments.Count - 1];
+            parameters = new object[commandArguments.Count - 1];
             string errorMessage = null;
             for (int i = 0; i < matchingMethods.Count && methodToExecute == null; i++)
             {
@@ -533,20 +517,7 @@ namespace DragynGames.Console
                     methodToExecute = methodInfo;
             }
 
-            if (methodToExecute == null)
-                Debug.LogWarning(!string.IsNullOrEmpty(errorMessage) ? errorMessage : "ERROR: something went wrong");
-            else
-            {
-                if (isGameObject)
-                {
-                    var type = methodToExecute.method.DeclaringType;
-                    //Get the first monoObject as type
-                    var obj =gameobjectsWithCorrectName[0].GetComponent(type);
-                    
-                    RegisterObjectInstance(obj);
-                }
-                ExecuteInstanceMethodIfAvailable(methodToExecute, parameters);
-            }
+            return methodToExecute;
         }
 
         private static void ExecuteInstanceMethodIfAvailable(ConsoleMethodInfo methodToExecute, object[] parameters)
@@ -578,7 +549,7 @@ namespace DragynGames.Console
         }
 
 
-        public static void FindCommands(string commandName, bool allowSubstringMatching,
+        internal static void FindCommands(string commandName, bool allowSubstringMatching,
             List<ConsoleMethodInfo> matchingCommands)
         {
             if (allowSubstringMatching)
@@ -601,115 +572,6 @@ namespace DragynGames.Console
             }
         }
 
-        // Finds all commands that have a matching signature with command
-        // - caretIndexIncrements: indices inside "string command" that separate two arguments in the command. This is used to
-        //   figure out which argument the caret is standing on
-        // - commandName: command's name (first argument)
-        internal void GetCommandSuggestions(string command, List<ConsoleMethodInfo> matchingCommands,
-            List<int> caretIndexIncrements, ref string commandName, out int numberOfParameters)
-        {
-            bool commandNameCalculated = false;
-            bool commandNameFullyTyped = false;
-            numberOfParameters = -1;
-            for (int i = 0; i < command.Length; i++)
-            {
-                if (char.IsWhiteSpace(command[i]))
-                    continue;
-
-                int delimiterIndex = CommandTypeParser.IndexOfDelimiterGroup(command[i]);
-                if (delimiterIndex >= 0)
-                {
-                    int endIndex = CommandTypeParser.IndexOfDelimiterGroupEnd(command, delimiterIndex, i + 1);
-                    if (!commandNameCalculated)
-                    {
-                        commandNameCalculated = true;
-                        commandNameFullyTyped = command.Length > endIndex;
-
-                        int commandNameLength = endIndex - i - 1;
-                        if (commandName == null || commandNameLength == 0 || commandName.Length != commandNameLength ||
-                            caseInsensitiveComparer.IndexOf(command, commandName, i + 1, commandNameLength,
-                                CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) != i + 1)
-                            commandName = command.Substring(i + 1, commandNameLength);
-                    }
-
-                    i = (endIndex < command.Length - 1 && command[endIndex + 1] == ',') ? endIndex + 1 : endIndex;
-                    caretIndexIncrements.Add(i + 1);
-                }
-                else
-                {
-                    int endIndex = CommandTypeParser.IndexOfChar(command, ' ', i + 1);
-                    if (!commandNameCalculated)
-                    {
-                        commandNameCalculated = true;
-                        commandNameFullyTyped = command.Length > endIndex;
-
-                        int commandNameLength = command[endIndex - 1] == ',' ? endIndex - 1 - i : endIndex - i;
-                        if (commandName == null || commandNameLength == 0 || commandName.Length != commandNameLength ||
-                            caseInsensitiveComparer.IndexOf(command, commandName, i, commandNameLength,
-                                CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) != i)
-                            commandName = command.Substring(i, commandNameLength);
-                    }
-
-                    i = endIndex;
-                    caretIndexIncrements.Add(i);
-                }
-
-                numberOfParameters++;
-            }
-
-            if (!commandNameCalculated)
-                commandName = string.Empty;
-
-            if (!string.IsNullOrEmpty(commandName))
-            {
-                int commandIndex = FindCommandIndex(commandName);
-                if (commandIndex < 0)
-                    commandIndex = ~commandIndex;
-
-                int commandLastIndex = commandIndex;
-                if (!commandNameFullyTyped)
-                {
-                    // Match all commands that start with commandName
-                    if (commandIndex < methods.Count && caseInsensitiveComparer.IsPrefix(methods[commandIndex].command,
-                            commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
-                    {
-                        while (commandIndex > 0 && caseInsensitiveComparer.IsPrefix(methods[commandIndex - 1].command,
-                                   commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
-                            commandIndex--;
-                        while (commandLastIndex < methods.Count - 1 && caseInsensitiveComparer.IsPrefix(
-                                   methods[commandLastIndex + 1].command, commandName,
-                                   CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace))
-                            commandLastIndex++;
-                    }
-                    else
-                        commandLastIndex = -1;
-                }
-                else
-                {
-                    // Match only the commands that are equal to commandName
-                    if (commandIndex < methods.Count && caseInsensitiveComparer.Compare(methods[commandIndex].command,
-                            commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
-                    {
-                        while (commandIndex > 0 && caseInsensitiveComparer.Compare(methods[commandIndex - 1].command,
-                                   commandName, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
-                            commandIndex--;
-                        while (commandLastIndex < methods.Count - 1 &&
-                               caseInsensitiveComparer.Compare(methods[commandLastIndex + 1].command, commandName,
-                                   CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
-                            commandLastIndex++;
-                    }
-                    else
-                        commandLastIndex = -1;
-                }
-
-                for (; commandIndex <= commandLastIndex; commandIndex++)
-                {
-                    if (methods[commandIndex].parameterTypes.Length >= numberOfParameters)
-                        matchingCommands.Add(methods[commandIndex]);
-                }
-            }
-        }
-
 
         private static bool IsMethodInMonoBehaviourSubclass(MethodInfo methodInfo)
         {
@@ -724,25 +586,6 @@ namespace DragynGames.Console
 
 
         // Find command's index in the list of registered commands using binary search
-        private static int FindCommandIndex(string command)
-        {
-            int min = 0;
-            int max = methods.Count - 1;
-            while (min <= max)
-            {
-                int mid = (min + max) / 2;
-                int comparison = caseInsensitiveComparer.Compare(command, methods[mid].command,
-                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
-                if (comparison == 0)
-                    return mid;
-                else if (comparison < 0)
-                    max = mid - 1;
-                else
-                    min = mid + 1;
-            }
-
-            return ~min;
-        }
 
 
         public static string GetTypeReadableName(Type type)
@@ -763,14 +606,13 @@ namespace DragynGames.Console
             return type.Name;
         }
 
-        public static List<ConsoleMethodInfo> GetMethods()
+        internal static List<ConsoleMethodInfo> GetMethods()
         {
             return methods;
         }
 
         public static async void FindCommandsStartingWithAsync(string trimStart)
         {
-            
         }
     }
 }

@@ -9,7 +9,7 @@ namespace DragynGames
     {
 
         // Returns the list of available commands
-        public static string LogAllCommands(List<ConsoleMethodInfo> methods)
+        internal static string LogAllCommands(List<ConsoleMethodInfo> methods)
         {
             int length = 25;
             for (int i = 0; i < methods.Count; i++)
@@ -31,7 +31,7 @@ namespace DragynGames
         }
 
         // Logs the list of available commands that are either equal to commandName or contain commandName as substring
-        public static string LogAllCommandsWithName(string commandName, Action<string,bool,List<ConsoleMethodInfo>> FindCommands, List<ConsoleMethodInfo> matchingMethods)
+        internal static string LogAllCommandsWithName(string commandName, Action<string,bool,List<ConsoleMethodInfo>> FindCommands, List<ConsoleMethodInfo> matchingMethods)
         {
             matchingMethods.Clear();
 
