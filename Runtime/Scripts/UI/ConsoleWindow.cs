@@ -1,6 +1,7 @@
 using PlasticPipe.PlasticProtocol.Messages;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
@@ -28,16 +29,24 @@ namespace DragynGames.Commands.UI
 
         TMP_InputField inputField;
         [SerializeField] int maxNumberOfTips = 5;
-        private bool visible;
+        [SerializeField] bool visible;
         private CanvasGroup canvasGroup;
 
         [SerializeField] Assembly[] assembly;
         CommandManager commandManager;
+        
+        
+        private Queue<string> lastInputs = new();
+        private int selectedLastCommand;
+        private int maxStoredInputs = 10;
+        private string currentInput;
+
         private void Awake()
         {
             commandManager = new CommandManager();
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
+            SetVisability(visible);
             AddListeners();
         }
 
@@ -62,15 +71,18 @@ namespace DragynGames.Commands.UI
             newMessage.transform.SetParent(windowContent, false);
         }
 
-        private void inputField_OnChanged(string arg0)
+        private void inputField_OnChanged(string input)
         {
-            if (arg0.Length == 0 || !IsCommand(arg0))
+            if (input.Length == 0 || !IsCommand(input))
             {
                 RemoveTips();
-                return;
             }
-
-            commandManager.FindCommandsStartingWithAsync(arg0.TrimStart(commandPrefix));
+            else
+            {
+                commandManager.FindCommandsStartingWithAsync(input.TrimStart(commandPrefix));
+            }
+            selectedLastCommand = lastInputs.Count;
+            currentInput = input;
 
         }
 
@@ -113,7 +125,21 @@ namespace DragynGames.Commands.UI
                 AddMessage(consoleInput);
             }
             RemoveTips();
+            ResetInputHistoryScroller(consoleInput);
 
+        }
+
+        private void ResetInputHistoryScroller(string consoleInput)
+        {
+            lastInputs.Enqueue(consoleInput); // Store the input
+            while (lastInputs.Count > maxStoredInputs)
+            {
+                lastInputs.Dequeue(); // Remove the oldest input if there are more than 5
+            }
+
+            currentInput = "";
+            selectedLastCommand = lastInputs.Count;
+            
         }
 
         private bool IsCommand(string consoleInput)
@@ -137,6 +163,36 @@ namespace DragynGames.Commands.UI
             if (Input.GetKeyDown(toggleVisabilty))
             {
                 SetVisability(!visible);
+            }
+            if(!visible)
+                return;
+
+            if (Input.GetKeyDown(KeyCode.UpArrow) && inputField.isFocused && lastInputs.Count > 0)
+            {
+                selectedLastCommand--;
+                if (selectedLastCommand < 0)
+                {
+                    selectedLastCommand = lastInputs.Count - 1;
+                    inputField.text = currentInput;
+                }
+                else
+                {
+                    inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
+                }
+            }
+
+            if (Input.GetKeyDown(KeyCode.DownArrow) && inputField.isFocused && lastInputs.Count > 0)
+            {
+                selectedLastCommand++;
+                if (selectedLastCommand >= lastInputs.Count)
+                {
+                    selectedLastCommand = 0;
+                    inputField.text = currentInput;
+                }
+                else
+                {
+                    inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
+                }
             }
         }
 
@@ -182,5 +238,7 @@ namespace DragynGames.Commands.UI
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }
+        
+        
     }
 }
