@@ -70,7 +70,7 @@ namespace DragynGames.Commands.UI
                 return;
             }
 
-            CommandManager.FindCommandsStartingWithAsync(arg0.TrimStart(commandPrefix));
+            commandManager.FindCommandsStartingWithAsync(arg0.TrimStart(commandPrefix));
 
         }
 
