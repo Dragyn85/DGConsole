@@ -1,11 +1,12 @@
-using PlasticPipe.PlasticProtocol.Messages;
-using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UIElements;
+using Image = UnityEngine.UI.Image;
 
 namespace DragynGames.Commands.UI
 {
@@ -21,6 +22,9 @@ namespace DragynGames.Commands.UI
         [Header("Message area")]
         [SerializeField] Transform windowContent;
         [SerializeField] TMP_Text messagePrefab;
+        [SerializeField] ScrollRect scrollRect;
+        [SerializeField] Image backGround;
+        
 
         [Space(10)]
         [Header("Commands")]
@@ -46,13 +50,26 @@ namespace DragynGames.Commands.UI
         
         private void Awake()
         {
-            _settings = new ConsoleSettings(inputTexts);
+            _settings = new ConsoleSettings();
+            _settings.OnSettingsChanged += UpdateSettings;
+            UpdateSettings();
+            
             commandManager = new CommandManager();
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             SetVisability(visible);
             AddListeners();
             commandManager.RegisterObjectInstance(_settings);
+        }
+
+        private void UpdateSettings()
+        {
+            foreach (var text in inputTexts)
+            {
+                text.fontSize = _settings.GetTextSize();
+            }
+            backGround.color = _settings.GetBackgroundColor();
+            visbleAlpha = _settings.GetAlpha();
         }
 
         private void AddListeners()
@@ -76,6 +93,13 @@ namespace DragynGames.Commands.UI
             newMessage.fontSize = _settings.GetTextSize();
             newMessage.transform.SetParent(windowContent, false);
             inputTexts.Add(newMessage);
+
+            StartCoroutine(ScrollToBottom());
+        }
+        IEnumerator ScrollToBottom()
+        {
+            yield return null;
+            scrollRect.verticalNormalizedPosition = 0;
         }
 
         private void inputField_OnChanged(string input)
@@ -210,6 +234,12 @@ namespace DragynGames.Commands.UI
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
             this.visible = visible;
+
+            if (visible)
+            {
+                inputField.ActivateInputField();
+                inputField.SetTextWithoutNotify("");
+            }
         }
 
         private void ShowAutocomplete(List<string> methodDescriptions)

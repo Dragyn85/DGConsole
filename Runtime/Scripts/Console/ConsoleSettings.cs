@@ -4,28 +4,34 @@ using System.Collections.Generic;
 using DragynGames.Commands;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Serialization;
+using UnityEngine.UI;
 
 namespace DragynGames
 {
     public class ConsoleSettings
     {
-        SettingsData _settingsData;
-        private List<TMP_Text> inputTexts;
+        SettingsData settingsData;
+        
+        public event Action OnSettingsChanged;
+        //Image
 
-        public ConsoleSettings(List<TMP_Text> messageList)
+        public ConsoleSettings()
         {
-            inputTexts = messageList;
             
-            _settingsData = new SettingsData();
+
+            settingsData = new SettingsData();
             if (!TryLoadSettings())
             {
-                _settingsData = new SettingsData();
+                settingsData = new SettingsData();
             }
         }
 
+        #region Saving and loading settings
+
         void SaveSettings()
         {
-            var jsonSettings = JsonUtility.ToJson(_settingsData);
+            var jsonSettings = JsonUtility.ToJson(settingsData);
             string path = Application.persistentDataPath + "/settings.json";
             System.IO.File.WriteAllText(path, jsonSettings);
         }
@@ -37,8 +43,8 @@ namespace DragynGames
             if (System.IO.File.Exists(path))
             {
                 string jsonSettings = System.IO.File.ReadAllText(path);
-                _settingsData = JsonUtility.FromJson<SettingsData>(jsonSettings);
-                if (_settingsData != null)
+                settingsData = JsonUtility.FromJson<SettingsData>(jsonSettings);
+                if (settingsData != null)
                 {
                     success = true;
                 }
@@ -47,26 +53,69 @@ namespace DragynGames
             return success;
         }
 
-        [ConsoleAction("SetTextSize", "Sets the text size of the console", "textSize")]
-        void SetTextSize(int textSize)
+        #endregion
+
+        #region TextSize
+
+        [ConsoleAction("TextSize", "Sets the text size of the console", "textSize")]
+        public void SetTextSize(int textSize)
         {
-            _settingsData.textSize = textSize;
+            settingsData.TextSize = textSize;
             SaveSettings();
-            foreach (var VARIABLE in inputTexts)
+            OnSettingsChanged?.Invoke();
+            
+        }
+
+        [ConsoleAction("TextSize", "Returns the size of the font")]
+        public int GetTextSize() => settingsData.TextSize;
+
+        #endregion
+
+        #region Background
+
+        [ConsoleAction("BGcolor", "Sets the background color of the console", "color")]
+        public void SetBackGroudColor(Color color)
+        {
+            settingsData.Color = color;
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
+        }
+
+        public Color GetBackgroundColor() => settingsData.Color;
+        
+        [ConsoleAction("Transparency", "Sets the transparency", "transparency percentage")]
+        public void SetTransparency(float transparencyPercentage)
+        {
+            float alpha;
+            if (transparencyPercentage > 1)
             {
-                VARIABLE.fontSize = textSize;
+                Mathf.Min(transparencyPercentage, 100);
+                transparencyPercentage /= 100;
             }
+
+            alpha = 1 - transparencyPercentage;
+            settingsData.Alpha = alpha;
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
         }
         
-        public int GetTextSize()
+        [ConsoleAction("Alpha", "Returns the transparency")]
+        public float GetAlpha() => settingsData.Alpha;
+        #endregion
+        [ConsoleAction("ResetSettings", "Resets the settings to default")]
+        public void ResetSettings()
         {
-            return _settingsData.textSize;
+            settingsData = new SettingsData();
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
         }
     }
 
     [Serializable]
     public class SettingsData
     {
-        public int textSize;
+        public int TextSize = 14;
+        public Color Color = Color.black;
+        public float Alpha = 0.7f;
     }
 }
