@@ -34,6 +34,7 @@ namespace DragynGames.Commands.UI
 
         [SerializeField] Assembly[] assembly;
         CommandManager commandManager;
+        List<TMP_Text> inputTexts = new();
         
         
         private Queue<string> lastInputs = new();
@@ -41,13 +42,17 @@ namespace DragynGames.Commands.UI
         private int maxStoredInputs = 10;
         private string currentInput;
 
+        private ConsoleSettings _settings;
+        
         private void Awake()
         {
+            _settings = new ConsoleSettings(inputTexts);
             commandManager = new CommandManager();
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             SetVisability(visible);
             AddListeners();
+            commandManager.RegisterObjectInstance(_settings);
         }
 
         private void AddListeners()
@@ -68,7 +73,9 @@ namespace DragynGames.Commands.UI
         {
             TMP_Text newMessage = Instantiate(messagePrefab);
             newMessage.SetText(message);
+            newMessage.fontSize = _settings.GetTextSize();
             newMessage.transform.SetParent(windowContent, false);
+            inputTexts.Add(newMessage);
         }
 
         private void inputField_OnChanged(string input)
