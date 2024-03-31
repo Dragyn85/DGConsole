@@ -219,10 +219,6 @@ namespace DragynGames.Commands
                 CommandTypeParser.SplitIntoArgumentsForCommand(command, out targetObjectName,
                     _settings.ObjectIdentifier);
 
-            //Find the method in the list of commands
-            int index = CachedMethodFinder.FindCommandIndex(argumentsForCommand[0], sortedCommands,
-                _settings.caseInsensitiveComparer);
-
             var matchingMethods =
                 CachedMethodFinder.GetMatchingMethods(argumentsForCommand, sortedCommands,
                     _settings.caseInsensitiveComparer);
@@ -440,7 +436,7 @@ namespace DragynGames.Commands
             Type[] parameterTypes = commandInfo.parameterTypes;
 
             int commandIndex =
-                CachedMethodFinder.FindCommandIndex(command, sortedCommands.AsReadOnly(),
+                CachedMethodFinder.FindFirstCommandIndex(command, sortedCommands.AsReadOnly(),
                     _settings.caseInsensitiveComparer);
             if (commandIndex < 0)
                 commandIndex = ~commandIndex;
