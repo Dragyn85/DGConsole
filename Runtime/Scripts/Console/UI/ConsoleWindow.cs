@@ -90,7 +90,7 @@ namespace DragynGames.Commands.UI
             }
             selectedLastCommand = lastInputs.Count;
             currentInput = input;
-
+            commandManager.GetSuggestions(input.TrimStart(commandPrefix),ShowAutocomplete);
         }
 
         private void inputField_OnSubmit(string consoleInput)
@@ -149,7 +149,7 @@ namespace DragynGames.Commands.UI
             
         }
 
-        private bool IsCommand(string consoleInput)
+        private bool IsCommand(string text)
         {
             if (commandPrefix.Length == 0) return true;
 
@@ -157,7 +157,7 @@ namespace DragynGames.Commands.UI
 
             foreach (var prefix in commandPrefix)
             {
-                if (consoleInput.StartsWith(prefix))
+                if (text.StartsWith(prefix))
                 {
                     isCommand = true;
                 }
@@ -212,15 +212,15 @@ namespace DragynGames.Commands.UI
             this.visible = visible;
         }
 
-        private void ShowAutocomplete(List<MethodDescription> methodDescriptions)
+        private void ShowAutocomplete(List<string> methodDescriptions)
         {
             RemoveTips();
 
             for (int i = 0; i < methodDescriptions.Count; i++)
             {
-                MethodDescription method = methodDescriptions[i];
+                string method = methodDescriptions[i];
                 TMP_Text newTip = Instantiate(messagePrefab);
-                newTip.SetText(method.ToString());
+                newTip.SetText(method);
                 newTip.transform.SetParent(commandTipArea, false);
                 if (i == 5) { break; }
             }

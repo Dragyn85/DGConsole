@@ -1,24 +1,54 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace DragynGames.Commands
 {
     public class CachedMethodFinder
     {
-        // Finds all commands that have a matching signature with command
-        // - caretIndexIncrements: indices inside "string command" that separate two arguments in the command. This is used to
-        //   figure out which argument the caret is standing on
-        // - commandName: command's name (first argument)
-        internal void GetCommandSuggestions(string command, IReadOnlyList<CommandInfo> methods,
-            List<CommandInfo> matchingCommands,
-            List<int> caretIndexIncrements, CompareInfo caseInsensitiveComparer, ref string commandName,
-            out int numberOfParameters)
+        internal async Task GetCommandSuggestionsAsync(string command, IReadOnlyList<CommandInfo> methods,
+            CompareInfo caseInsensitiveComparer, string commandName, Action<List<string>> callback,
+            CancellationToken cancellationToken)
         {
+            await Task.Delay(300, cancellationToken);
+            
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            List<CommandInfo> matchingCommands = new List<CommandInfo>();
+            List<CommandInfo> numberOfParameters = await Task.Run(() => GetCommandSuggestions(
+                command,
+                methods,
+                matchingCommands,
+                caseInsensitiveComparer,
+                ref commandName));
+            List<string> commandSignatures = new List<string>();
+            foreach (CommandInfo commandInfo in numberOfParameters)
+            {
+                commandSignatures.Add(commandInfo.signature);
+            }
+
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                callback.Invoke(commandSignatures);
+            }
+        }
+
+        internal List<CommandInfo> GetCommandSuggestions(string command, IReadOnlyList<CommandInfo> methods,
+            List<CommandInfo> matchingCommands,
+            CompareInfo caseInsensitiveComparer, ref string commandName
+        )
+        {
+            List<int> caretIndexIncrements = new List<int>();
+            int numberOfParameters = -1;
             bool commandNameCalculated = false;
             bool commandNameFullyTyped = false;
-            numberOfParameters = -1;
 
             for (int i = 0; i < command.Length; i++)
             {
@@ -48,6 +78,8 @@ namespace DragynGames.Commands
                 HandleCommandName(commandName, ref commandNameFullyTyped, numberOfParameters, matchingCommands, methods,
                     caseInsensitiveComparer);
             }
+
+            return matchingCommands;
         }
 
         private int HandleDelimiterGroup(string command, ref string commandName, ref bool commandNameCalculated,
@@ -257,7 +289,7 @@ namespace DragynGames.Commands
             List<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
         {
             List<CommandInfo> matchingCommands = new List<CommandInfo>();
-            
+
             if (allowSubstringMatching)
             {
                 for (int i = 0; i < methods.Count; i++)

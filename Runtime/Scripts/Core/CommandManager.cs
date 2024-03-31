@@ -4,6 +4,8 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace DragynGames.Commands
@@ -16,6 +18,10 @@ namespace DragynGames.Commands
         private CommandTypeParser _commandTypeParser;
         private ConsoleBuiltInActions _consoleBuiltInActions;
         public  CommandSystemSettings _settings = new CommandSystemSettings();
+        private CachedMethodFinder cachedMethodFinder = new CachedMethodFinder();
+        
+        private CancellationTokenSource cts;
+        private Task currentTask;
 
         public CommandManager(bool useBuiltInCommands = true)
 
@@ -34,6 +40,22 @@ namespace DragynGames.Commands
                 _consoleBuiltInActions = new ConsoleBuiltInActions(this);
                 _consoleBuiltInActions.AddHelpCommands();
             }
+        }
+        
+        public void GetSuggestions(string commans, Action<List<string>> callback)
+        {
+            // Cancel the previous task
+            if (cts != null)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+
+            // Create a new CancellationTokenSource
+            cts = new CancellationTokenSource();
+
+            // Start a new task without awaiting it
+            currentTask = cachedMethodFinder.GetCommandSuggestionsAsync(commans, sortedCommands, _settings.caseInsensitiveComparer, commans, callback, cts.Token);
         }
 
         public  void RegisterObjectInstance(object consoleAction)
@@ -489,6 +511,8 @@ namespace DragynGames.Commands
         public  void FindCommandsStartingWithAsync(string trimStart)
         {
         }
+
+        
     }
 
     internal enum CommandType
