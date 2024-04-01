@@ -34,27 +34,8 @@ namespace DragynGames.Commands
             this.commandType = commandType;
         }
 
-        
-        /*public CommandInfo(MethodInfo method, Type[] parameterTypes, object instance, string command,
-            string signature, string[] parameters)
-        {
-            this.method = method;
-            this.parameterTypes = parameterTypes;
-            this.instance = instance;
-            this.command = command;
-            this.signature = signature;
-            this.parameters = parameters;
-            this.instance = instance;
-        }*/
-
         public bool IsValid()
         {
-            //if (!method.IsStatic && (instance == null || instance.Equals(null)))
-            //{
-            //    return false;
-            //}
-
-
             return true;
         }
 
@@ -88,6 +69,18 @@ namespace DragynGames.Commands
             }
 
             return true;
+        }
+        
+        public override int GetHashCode()
+        {
+            int hash = 17;
+            hash = hash * 31 + (command?.GetHashCode() ?? 0);
+            hash = hash * 31 + parameterTypes.Length;
+            for (int i = 0; i < parameterTypes.Length; i++)
+            {
+                hash = hash * 31 + (parameterTypes[i]?.GetHashCode() ?? 0);
+            }
+            return hash;
         }
     }
 }

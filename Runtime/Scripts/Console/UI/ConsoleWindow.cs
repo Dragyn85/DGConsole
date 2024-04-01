@@ -1,15 +1,14 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using DragynGames.Commands;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.UIElements;
 using Image = UnityEngine.UI.Image;
 
-namespace DragynGames.Commands.UI
+namespace DragynGames.Console
 {
     internal class ConsoleWindow : MonoBehaviour
     {
@@ -39,7 +38,7 @@ namespace DragynGames.Commands.UI
 
         [SerializeField] Assembly[] assembly;
         CommandManager commandManager;
-        List<TMP_Text> inputTexts = new();
+        List<TMP_Text> messageTexts = new();
 
 
         private Queue<string> lastInputs = new();
@@ -54,6 +53,7 @@ namespace DragynGames.Commands.UI
             commandManager = new CommandManager();
             _settings = new ConsoleSettings();
             commandManager.RegisterObjectInstance(_settings);
+            commandManager.RegisterObjectInstance(this);
 
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
@@ -68,10 +68,20 @@ namespace DragynGames.Commands.UI
             _settings.OnSettingsChanged -= UpdateSettings;
             Application.logMessageReceived -= AddLogMessage;
         }
+        
+        [ConsoleAction("Clean", "Removes all messages from the console")]
+        private void RemoveMessages()
+        {
+            foreach (var message in messageTexts)
+            {
+                Destroy(message.gameObject);
+            }
+            messageTexts.Clear();
+        }
 
         private void UpdateSettings()
         {
-            foreach (var text in inputTexts)
+            foreach (var text in messageTexts)
             {
                 text.fontSize = _settings.GetTextSize();
             }
@@ -143,11 +153,14 @@ namespace DragynGames.Commands.UI
 
         void AddMessage(string message)
         {
+            if (string.IsNullOrEmpty(message))
+                return;
+            
             TMP_Text newMessage = Instantiate(messagePrefab);
             newMessage.SetText(message);
             newMessage.fontSize = _settings.GetTextSize();
             newMessage.transform.SetParent(windowContent, false);
-            inputTexts.Add(newMessage);
+            messageTexts.Add(newMessage);
 
             if (_settings.ShouldScrollToBottom)
                 StartCoroutine(ScrollToBottom());
@@ -335,5 +348,7 @@ namespace DragynGames.Commands.UI
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }
+        
+        
     }
 }

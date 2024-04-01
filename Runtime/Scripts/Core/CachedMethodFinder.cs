@@ -12,9 +12,10 @@ namespace DragynGames.Commands
     {
         internal async Task GetCommandSuggestionsAsync(string command, IReadOnlyList<CommandInfo> methods,
             CompareInfo caseInsensitiveComparer, string commandName, Action<List<string>> callback,
+            int msForCodeCompletion,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(300, cancellationToken);
+            await Task.Delay(msForCodeCompletion, cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)
             {
@@ -48,11 +49,6 @@ namespace DragynGames.Commands
             int numberOfParameters = -1;
             bool commandNameCalculated = false;
             bool commandNameFullyTyped = false;
-
-            if(command.Equals("helpwith"))
-            {
-                Debug.Log("Help with command");
-            }
             
             for (int i = 0; i < command.Length; i++)
             {
