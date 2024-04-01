@@ -119,13 +119,15 @@ namespace DragynGames.Commands
 
         public static bool ParseBool(string input, out object output)
         {
-            if (input == "1" || input.ToLowerInvariant() == "true")
+            if (input == "1" || input.ToLowerInvariant() == "true" || input.ToLowerInvariant() == "yes" ||
+                input.ToLowerInvariant() == "on") 
             {
                 output = true;
                 return true;
             }
 
-            if (input == "0" || input.ToLowerInvariant() == "false")
+            if (input == "0" || input.ToLowerInvariant() == "false" || input.ToLowerInvariant() == "no" ||
+                input.ToLowerInvariant() == "off")
             {
                 output = false;
                 return true;
@@ -285,11 +287,21 @@ namespace DragynGames.Commands
 
         public static bool ParseColor(string input, out object output)
         {
+            if (ColorUtility.TryParseHtmlString(input, out var color))
+            {
+                output = color;
+                return true;
+            }
             return ParseVector(input, typeof(Color), out output);
         }
 
         public static bool ParseColor32(string input, out object output)
         {
+            if (ColorUtility.TryParseHtmlString(input, out var color))
+            {
+                output = color;
+                return true;
+            }
             return ParseVector(input, typeof(Color32), out output);
         }
 

@@ -1,30 +1,34 @@
-using PlasticPipe.PlasticProtocol.Messages;
-using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using DragynGames.Commands;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Image = UnityEngine.UI.Image;
 
-namespace DragynGames.Commands.UI
+namespace DragynGames.Console
 {
     internal class ConsoleWindow : MonoBehaviour
     {
-        [Header("Visibility")]
-        [SerializeField] KeyCode toggleVisabilty = KeyCode.L;
+        [Header("Visibility")] [SerializeField]
+        KeyCode toggleVisabilty = KeyCode.L;
+
         [SerializeField, Range(0, 1)] float visbleAlpha = 1;
 
 
+        [Space(10)] [Header("Message area")] [SerializeField]
+        Transform windowContent;
 
-        [Space(10)]
-        [Header("Message area")]
-        [SerializeField] Transform windowContent;
         [SerializeField] TMP_Text messagePrefab;
+        [SerializeField] ScrollRect scrollRect;
+        [SerializeField] Image backGround;
 
-        [Space(10)]
-        [Header("Commands")]
-        [SerializeField] char[] commandPrefix;
+
+        [Space(10)] [Header("Commands")] [SerializeField]
+        char[] commandPrefix;
+
         [SerializeField] Transform commandTipArea;
 
         TMP_InputField inputField;
@@ -34,25 +38,103 @@ namespace DragynGames.Commands.UI
 
         [SerializeField] Assembly[] assembly;
         CommandManager commandManager;
-        List<TMP_Text> inputTexts = new();
-        
-        
+        List<TMP_Text> messageTexts = new();
+
+
         private Queue<string> lastInputs = new();
         private int selectedLastCommand;
         private int maxStoredInputs = 10;
         private string currentInput;
 
         private ConsoleSettings _settings;
-        
+
         private void Awake()
         {
-            _settings = new ConsoleSettings(inputTexts);
             commandManager = new CommandManager();
+            _settings = new ConsoleSettings();
+            commandManager.RegisterObjectInstance(_settings);
+            commandManager.RegisterObjectInstance(this);
+
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             SetVisability(visible);
             AddListeners();
-            commandManager.RegisterObjectInstance(_settings);
+
+            UpdateSettings();
+        }
+
+        private void OnDestroy()
+        {
+            _settings.OnSettingsChanged -= UpdateSettings;
+            Application.logMessageReceived -= AddLogMessage;
+        }
+        
+        [ConsoleAction("Clean", "Removes all messages from the console")]
+        private void RemoveMessages()
+        {
+            foreach (var message in messageTexts)
+            {
+                Destroy(message.gameObject);
+            }
+            messageTexts.Clear();
+        }
+
+        private void UpdateSettings()
+        {
+            foreach (var text in messageTexts)
+            {
+                text.fontSize = _settings.GetTextSize();
+            }
+
+            backGround.color = _settings.GetBackgroundColor();
+            visbleAlpha = _settings.GetAlpha();
+            SetVisability(visible);
+
+            if (_settings.ShouldPrintLogs)
+            {
+                Application.logMessageReceived -= AddLogMessage;
+                Application.logMessageReceived += AddLogMessage;
+            }
+            else
+            {
+                Application.logMessageReceived -= AddLogMessage;
+            }
+        }
+
+        private void AddLogMessage(string condition, string stacktrace, LogType type)
+        {
+            if (!Application.isPlaying)
+                return;
+            
+            bool isAcceptedType = _settings.GetAcceptedLogTypes()[(int) type];
+            bool shouldPrintStacktrace = _settings.GetAcceptedStackTraces()[(int) type];
+            
+            if (isAcceptedType)
+            {
+                PrintLogText(condition, type);
+            }
+            if(isAcceptedType && shouldPrintStacktrace)
+            {
+                PrintLogText(stacktrace, type);
+            }
+        }
+
+        private void PrintLogText(string text, LogType type)
+        {
+            switch (type)
+            {
+                case LogType.Error:
+                case LogType.Exception:
+                case LogType.Assert:
+                    AddMessage($"<color=red>{text}</color>");
+                    break;
+                case LogType.Warning:
+                    AddMessage($"<color=yellow>{text}</color>");
+                    break;
+                case LogType.Log:
+                    AddMessage(text);
+                    break;
+            }
         }
 
         private void AddListeners()
@@ -61,7 +143,7 @@ namespace DragynGames.Commands.UI
             inputField.onValueChanged.AddListener(inputField_OnChanged);
             inputField.onDeselect.AddListener(HandleDeselect);
             inputField.onEndEdit.AddListener(HandleDeselect);
-            // MethodHandler.OnSearchComplete += ShowAutocomplete;
+            _settings.OnSettingsChanged += UpdateSettings;
         }
 
         private void HandleDeselect(string text)
@@ -71,11 +153,23 @@ namespace DragynGames.Commands.UI
 
         void AddMessage(string message)
         {
+            if (string.IsNullOrEmpty(message))
+                return;
+            
             TMP_Text newMessage = Instantiate(messagePrefab);
             newMessage.SetText(message);
             newMessage.fontSize = _settings.GetTextSize();
             newMessage.transform.SetParent(windowContent, false);
-            inputTexts.Add(newMessage);
+            messageTexts.Add(newMessage);
+
+            if (_settings.ShouldScrollToBottom)
+                StartCoroutine(ScrollToBottom());
+        }
+
+        IEnumerator ScrollToBottom()
+        {
+            yield return null;
+            scrollRect.verticalNormalizedPosition = 0;
         }
 
         private void inputField_OnChanged(string input)
@@ -88,9 +182,10 @@ namespace DragynGames.Commands.UI
             {
                 commandManager.FindCommandsStartingWithAsync(input.TrimStart(commandPrefix));
             }
+
             selectedLastCommand = lastInputs.Count;
             currentInput = input;
-            commandManager.GetSuggestions(input.TrimStart(commandPrefix),ShowAutocomplete);
+            commandManager.GetSuggestions(input.TrimStart(commandPrefix), ShowAutocomplete);
         }
 
         private void inputField_OnSubmit(string consoleInput)
@@ -115,25 +210,24 @@ namespace DragynGames.Commands.UI
                         string stringResult = result.ReturnedObject.ToString();
                         AddMessage(stringResult);
                     }
-                    
                 }
                 else
                 {
                     AddMessage(result.ExecutionMessage);
                 }
+
                 //if (!string.IsNullOrEmpty(response))
                 {
                     //  AddMessage(response);
                 }
-
             }
             else
             {
                 AddMessage(consoleInput);
             }
+
             RemoveTips();
             ResetInputHistoryScroller(consoleInput);
-
         }
 
         private void ResetInputHistoryScroller(string consoleInput)
@@ -146,7 +240,6 @@ namespace DragynGames.Commands.UI
 
             currentInput = "";
             selectedLastCommand = lastInputs.Count;
-            
         }
 
         private bool IsCommand(string text)
@@ -165,13 +258,15 @@ namespace DragynGames.Commands.UI
 
             return isCommand;
         }
+
         private void Update()
         {
             if (Input.GetKeyDown(toggleVisabilty))
             {
                 SetVisability(!visible);
             }
-            if(!visible)
+
+            if (!visible)
                 return;
 
             if (Input.GetKeyDown(KeyCode.UpArrow) && inputField.isFocused && lastInputs.Count > 0)
@@ -205,11 +300,16 @@ namespace DragynGames.Commands.UI
 
         private void SetVisability(bool visible)
         {
-
-            canvasGroup.alpha = visible ? visbleAlpha : 0;
+            canvasGroup.alpha = visible ? Mathf.Max(visbleAlpha, 0.2f) : 0;
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
             this.visible = visible;
+
+            if (visible)
+            {
+                inputField.ActivateInputField();
+                inputField.SetTextWithoutNotify("");
+            }
         }
 
         private void ShowAutocomplete(List<string> methodDescriptions)
@@ -222,8 +322,12 @@ namespace DragynGames.Commands.UI
                 TMP_Text newTip = Instantiate(messagePrefab);
                 newTip.SetText(method);
                 newTip.transform.SetParent(commandTipArea, false);
-                if (i == 5) { break; }
+                if (i == 5)
+                {
+                    break;
+                }
             }
+
             int amountOfTime = methodDescriptions.Count > maxNumberOfTips ? maxNumberOfTips : methodDescriptions.Count;
 
             UpdateTipLayout(amountOfTime);
@@ -234,14 +338,13 @@ namespace DragynGames.Commands.UI
             foreach (Transform tip in commandTipArea)
             {
                 Destroy(tip.gameObject);
-
             }
+
             UpdateTipLayout(0);
         }
 
         private void UpdateTipLayout(int height)
         {
-
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }

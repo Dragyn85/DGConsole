@@ -12,10 +12,11 @@ namespace DragynGames.Commands
     {
         internal async Task GetCommandSuggestionsAsync(string command, IReadOnlyList<CommandInfo> methods,
             CompareInfo caseInsensitiveComparer, string commandName, Action<List<string>> callback,
+            int msForCodeCompletion,
             CancellationToken cancellationToken)
         {
-            await Task.Delay(300, cancellationToken);
-            
+            await Task.Delay(msForCodeCompletion, cancellationToken);
+
             if (cancellationToken.IsCancellationRequested)
             {
                 return;
@@ -26,8 +27,7 @@ namespace DragynGames.Commands
                 command,
                 methods,
                 matchingCommands,
-                caseInsensitiveComparer,
-                ref commandName));
+                caseInsensitiveComparer));
             List<string> commandSignatures = new List<string>();
             foreach (CommandInfo commandInfo in numberOfParameters)
             {
@@ -42,14 +42,14 @@ namespace DragynGames.Commands
 
         internal List<CommandInfo> GetCommandSuggestions(string command, IReadOnlyList<CommandInfo> methods,
             List<CommandInfo> matchingCommands,
-            CompareInfo caseInsensitiveComparer, ref string commandName
-        )
+            CompareInfo caseInsensitiveComparer)
         {
+            string commandName = string.Empty;
             List<int> caretIndexIncrements = new List<int>();
             int numberOfParameters = -1;
             bool commandNameCalculated = false;
             bool commandNameFullyTyped = false;
-
+            
             for (int i = 0; i < command.Length; i++)
             {
                 if (char.IsWhiteSpace(command[i]))
@@ -129,7 +129,7 @@ namespace DragynGames.Commands
             List<CommandInfo> matchingCommands, IReadOnlyList<CommandInfo> methods,
             CompareInfo caseInsensitiveComparer)
         {
-            int commandIndex = FindCommandIndex(commandName, methods, caseInsensitiveComparer);
+            int commandIndex = FindFirstCommandIndex(commandName, methods, caseInsensitiveComparer);
             if (commandIndex < 0)
                 commandIndex = ~commandIndex;
 
@@ -164,6 +164,33 @@ namespace DragynGames.Commands
                     CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
                 if (comparison == 0)
                     return mid;
+                else if (comparison < 0)
+                    max = mid - 1;
+                else
+                    min = mid + 1;
+            }
+
+            return ~min;
+        }
+        internal static int FindFirstCommandIndex(string command, IReadOnlyList<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
+        {
+            int min = 0;
+            int max = methods.Count - 1;
+            while (min <= max)
+            {
+                int mid = (min + max) / 2;
+                int comparison = caseInsensitiveComparer.Compare(command, methods[mid].command,
+                    CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace);
+                if (comparison == 0)
+                {
+                    // Continue to check the previous elements in the list as long as they match the command
+                    while (mid > 0 && caseInsensitiveComparer.Compare(command, methods[mid - 1].command,
+                               CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0)
+                    {
+                        mid--;
+                    }
+                    return mid;
+                }
                 else if (comparison < 0)
                     max = mid - 1;
                 else
@@ -218,7 +245,7 @@ namespace DragynGames.Commands
         {
             List<CommandInfo> matchingMethods = new List<CommandInfo>();
             bool parameterCountMismatch = false;
-            int commandIndex = FindCommandIndex(commandArguments[0], methods, caseInsensitiveComparer);
+            int commandIndex = FindFirstCommandIndex(commandArguments[0], methods, caseInsensitiveComparer);
 
             if (commandIndex >= 0)
             {

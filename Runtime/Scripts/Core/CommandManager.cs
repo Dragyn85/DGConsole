@@ -10,8 +10,6 @@ using UnityEngine;
 
 namespace DragynGames.Commands
 {
-    
-
     public class CommandManager
     {
         private  List<CommandInfo> sortedCommands = new List<CommandInfo>();
@@ -20,8 +18,9 @@ namespace DragynGames.Commands
         public  CommandSystemSettings _settings = new CommandSystemSettings();
         private CachedMethodFinder cachedMethodFinder = new CachedMethodFinder();
         
-        private CancellationTokenSource cts;
-        private Task currentTask;
+        private CancellationTokenSource codeCompletionCancellationTokenSource;
+        private int msForCodeCompletion = 150;
+        
 
         public CommandManager(bool useBuiltInCommands = true)
 
@@ -42,20 +41,20 @@ namespace DragynGames.Commands
             }
         }
         
-        public void GetSuggestions(string commans, Action<List<string>> callback)
+        public void GetSuggestions(string commands, Action<List<string>> callback)
         {
             // Cancel the previous task
-            if (cts != null)
+            if (codeCompletionCancellationTokenSource != null)
             {
-                cts.Cancel();
-                cts.Dispose();
+                codeCompletionCancellationTokenSource.Cancel();
+                codeCompletionCancellationTokenSource.Dispose();
             }
 
             // Create a new CancellationTokenSource
-            cts = new CancellationTokenSource();
+            codeCompletionCancellationTokenSource = new CancellationTokenSource();
 
             // Start a new task without awaiting it
-            currentTask = cachedMethodFinder.GetCommandSuggestionsAsync(commans, sortedCommands, _settings.caseInsensitiveComparer, commans, callback, cts.Token);
+            cachedMethodFinder.GetCommandSuggestionsAsync(commands, sortedCommands, _settings.caseInsensitiveComparer, commands, callback,msForCodeCompletion, codeCompletionCancellationTokenSource.Token);
         }
 
         public  void RegisterObjectInstance(object consoleAction)
@@ -218,10 +217,6 @@ namespace DragynGames.Commands
             var argumentsForCommand =
                 CommandTypeParser.SplitIntoArgumentsForCommand(command, out targetObjectName,
                     _settings.ObjectIdentifier);
-
-            //Find the method in the list of commands
-            int index = CachedMethodFinder.FindCommandIndex(argumentsForCommand[0], sortedCommands,
-                _settings.caseInsensitiveComparer);
 
             var matchingMethods =
                 CachedMethodFinder.GetMatchingMethods(argumentsForCommand, sortedCommands,
@@ -440,7 +435,7 @@ namespace DragynGames.Commands
             Type[] parameterTypes = commandInfo.parameterTypes;
 
             int commandIndex =
-                CachedMethodFinder.FindCommandIndex(command, sortedCommands.AsReadOnly(),
+                CachedMethodFinder.FindFirstCommandIndex(command, sortedCommands.AsReadOnly(),
                     _settings.caseInsensitiveComparer);
             if (commandIndex < 0)
                 commandIndex = ~commandIndex;
