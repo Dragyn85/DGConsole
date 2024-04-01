@@ -14,18 +14,18 @@ namespace DragynGames
         SettingsData settingsData;
         
         public event Action OnSettingsChanged;
-        //Image
+        
+        
 
         public ConsoleSettings()
         {
-            
-
             settingsData = new SettingsData();
             if (!TryLoadSettings())
             {
                 settingsData = new SettingsData();
             }
         }
+        
 
         #region Saving and loading settings
 
@@ -102,6 +102,57 @@ namespace DragynGames
         [ConsoleAction("Alpha", "Returns the transparency")]
         public float GetAlpha() => settingsData.Alpha;
         #endregion
+
+        #region Scrolling
+        public bool ShouldScrollToBottom => settingsData.ScrollToBottom;
+        
+        [ConsoleAction("FollowMessages", "Sets the console to scroll down to follow latest message", "Should follow")]
+        public void SetScrollToBottom(bool value)
+        {
+            settingsData.ScrollToBottom = value;
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
+        }
+        
+
+        #endregion
+        
+        #region Logging
+        public bool ShouldPrintLogs => settingsData.PrintLogs;
+        
+        [ConsoleAction("PrintLogs", "Sets the console to print logs", "Should print")]
+        public void SetPrintLogs(bool value)
+        {
+            settingsData.PrintLogs = value;
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
+        }
+        [ConsoleAction("PrintStackTrace", "parameters: Errors,Exceptions,Assertions,Warnings,Logs. Ex [1,0,0,0,0] turns only errors on", "Should print")]
+        public void SetAcceptedStackTraces(bool[] stackTraces)
+        {
+            settingsData.printStackTrace = stackTraces;
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
+        }
+        
+        [ConsoleAction("PrintStackTrace", "parameters: Errors,Exceptions,Assertions,Warnings,Logs. Ex [1,0,0,0,0] turns only errors on", "Should print")]
+        public void SetAcceptedLogTypes(bool[] logTypes)
+        {
+            settingsData.printLogTypes = logTypes;
+            SaveSettings();
+            OnSettingsChanged?.Invoke();
+        }
+        
+        public bool[] GetAcceptedLogTypes()
+        {
+            return settingsData.printLogTypes;
+        }
+        public bool[] GetAcceptedStackTraces()
+        {
+            return settingsData.printStackTrace;
+        }
+        
+        #endregion
         [ConsoleAction("ResetSettings", "Resets the settings to default")]
         public void ResetSettings()
         {
@@ -109,6 +160,14 @@ namespace DragynGames
             SaveSettings();
             OnSettingsChanged?.Invoke();
         }
+        
+        [ConsoleAction("GetSettings", "Returns the current settings")]
+        public string GetSettings()
+        {
+            return JsonUtility.ToJson(settingsData, true);
+        }
+
+        
     }
 
     [Serializable]
@@ -117,5 +176,10 @@ namespace DragynGames
         public int TextSize = 14;
         public Color Color = Color.black;
         public float Alpha = 0.7f;
+        public bool ScrollToBottom = true;
+        public bool PrintLogs = true;
+        public bool[] printLogTypes = new bool[5]{true,true,true,true,true};
+        public bool[] printStackTrace = new bool[5]{false,false,false,false,false};
+        
     }
 }

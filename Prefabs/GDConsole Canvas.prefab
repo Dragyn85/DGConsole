@@ -352,10 +352,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   toggleVisabilty: 96
-  visbleAlpha: 1
+  visbleAlpha: 0.528
   windowContent: {fileID: 4056741568128704447}
   messagePrefab: {fileID: 900608910855212387, guid: a70290a212927e543bc9f7fbc1cf01a2, type: 3}
   scrollRect: {fileID: 1179812601335128617}
+  backGround: {fileID: 5380832303608967278}
   commandPrefix: 2d00
   commandTipArea: {fileID: 7307349265840052043}
   maxNumberOfTips: 5
@@ -368,7 +369,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1147475010233956307}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0.88
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -495,7 +496,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000030517578}
+  m_AnchoredPosition: {x: 0, y: -0.000030517578}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &3743851697311197764
@@ -1363,7 +1364,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 5316116709305655374}
   m_HandleRect: {fileID: 6943009316512316232}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:

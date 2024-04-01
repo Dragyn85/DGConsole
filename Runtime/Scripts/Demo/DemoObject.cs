@@ -42,5 +42,18 @@ namespace DragynGames.Commands.Demo
         {
             return a + b + _myInnateValue;
         }
+
+        public void SendLog()
+        {
+            Debug.Log("Sending log");
+        }
+        public void SendError()
+        {
+            Debug.LogError("Sending error");
+        }
+        public void SendWarning()
+        {
+            Debug.LogWarning("Sending warning");
+        }
     }
 }
