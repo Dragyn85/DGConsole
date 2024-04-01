@@ -51,16 +51,16 @@ namespace DragynGames.Commands.UI
 
         private void Awake()
         {
-            _settings = new ConsoleSettings();
-            _settings.OnSettingsChanged += UpdateSettings;
-            UpdateSettings();
-
             commandManager = new CommandManager();
+            _settings = new ConsoleSettings();
+            commandManager.RegisterObjectInstance(_settings);
+
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
             SetVisability(visible);
             AddListeners();
-            commandManager.RegisterObjectInstance(_settings);
+
+            UpdateSettings();
         }
 
         private void OnDestroy()
@@ -78,11 +78,17 @@ namespace DragynGames.Commands.UI
 
             backGround.color = _settings.GetBackgroundColor();
             visbleAlpha = _settings.GetAlpha();
+            SetVisability(visible);
 
             if (_settings.ShouldPrintLogs)
-                Application.logMessageReceived += AddLogMessage;
-            else
+            {
                 Application.logMessageReceived -= AddLogMessage;
+                Application.logMessageReceived += AddLogMessage;
+            }
+            else
+            {
+                Application.logMessageReceived -= AddLogMessage;
+            }
         }
 
         private void AddLogMessage(string condition, string stacktrace, LogType type)
@@ -127,7 +133,7 @@ namespace DragynGames.Commands.UI
             inputField.onValueChanged.AddListener(inputField_OnChanged);
             inputField.onDeselect.AddListener(HandleDeselect);
             inputField.onEndEdit.AddListener(HandleDeselect);
-            // MethodHandler.OnSearchComplete += ShowAutocomplete;
+            _settings.OnSettingsChanged += UpdateSettings;
         }
 
         private void HandleDeselect(string text)
@@ -281,7 +287,7 @@ namespace DragynGames.Commands.UI
 
         private void SetVisability(bool visible)
         {
-            canvasGroup.alpha = visible ? visbleAlpha : 0;
+            canvasGroup.alpha = visible ? Mathf.Max(visbleAlpha, 0.2f) : 0;
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
             this.visible = visible;

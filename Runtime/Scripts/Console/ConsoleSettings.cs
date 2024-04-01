@@ -73,8 +73,8 @@ namespace DragynGames
 
         #region Background
 
-        [ConsoleAction("BGcolor", "Sets the background color of the console", "color")]
-        public void SetBackGroudColor(Color color)
+        [ConsoleAction("BGcolor", "Sets the background color of the console, ex. \"BGcolor red\" and \"BGcolor (1 0 0)\" both sets bg to red.", "color")]
+        public void SetBackgroundColor(Color color)
         {
             settingsData.Color = color;
             SaveSettings();
@@ -83,13 +83,13 @@ namespace DragynGames
 
         public Color GetBackgroundColor() => settingsData.Color;
         
-        [ConsoleAction("Transparency", "Sets the transparency", "transparency percentage")]
+        [ConsoleAction("Transparency", "Sets the transparency max 80 percentage", "transparency percentage")]
         public void SetTransparency(float transparencyPercentage)
         {
             float alpha;
             if (transparencyPercentage > 1)
             {
-                Mathf.Min(transparencyPercentage, 100);
+                transparencyPercentage = Mathf.Min(transparencyPercentage, 100);
                 transparencyPercentage /= 100;
             }
 
@@ -127,7 +127,7 @@ namespace DragynGames
             SaveSettings();
             OnSettingsChanged?.Invoke();
         }
-        [ConsoleAction("PrintStackTrace", "parameters: Errors,Exceptions,Assertions,Warnings,Logs. Ex [1,0,0,0,0] turns only errors on", "Should print")]
+        [ConsoleAction("PrintStackTrace", "parameters: Error,Assert,Warning,Log,Exception. Ex [1 0 0 0 0] turns on errors stacktrace", "Should print")]
         public void SetAcceptedStackTraces(bool[] stackTraces)
         {
             settingsData.printStackTrace = stackTraces;
@@ -135,7 +135,7 @@ namespace DragynGames
             OnSettingsChanged?.Invoke();
         }
         
-        [ConsoleAction("PrintStackTrace", "parameters: Errors,Exceptions,Assertions,Warnings,Logs. Ex [1,0,0,0,0] turns only errors on", "Should print")]
+        [ConsoleAction("PrintLogTypes", "parameters: Error,Assert,Warning,Log,Exception. Ex [1 0 0 0 0] turns only errors on", "Should print")]
         public void SetAcceptedLogTypes(bool[] logTypes)
         {
             settingsData.printLogTypes = logTypes;

@@ -287,11 +287,21 @@ namespace DragynGames.Commands
 
         public static bool ParseColor(string input, out object output)
         {
+            if (ColorUtility.TryParseHtmlString(input, out var color))
+            {
+                output = color;
+                return true;
+            }
             return ParseVector(input, typeof(Color), out output);
         }
 
         public static bool ParseColor32(string input, out object output)
         {
+            if (ColorUtility.TryParseHtmlString(input, out var color))
+            {
+                output = color;
+                return true;
+            }
             return ParseVector(input, typeof(Color32), out output);
         }
 
