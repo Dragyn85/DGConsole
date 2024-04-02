@@ -250,7 +250,7 @@ GameObject:
   - component: {fileID: 1284805289573968142}
   - component: {fileID: 7309775694761457884}
   m_Layer: 5
-  m_Name: GDConsole Canvas
+  m_Name: GDConsole
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
