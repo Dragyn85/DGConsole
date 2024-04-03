@@ -11,5 +11,11 @@ namespace DragynGames.Commands.Demo
             //increase scale of object
             transform.localScale += new Vector3(0.5f, 0.5f, 0.5f);
         }
+        
+        public void ShrinkObject()
+        {
+            //increase scale of object
+            transform.localScale -= new Vector3(0.5f, 0.5f, 0.5f);
+        }
     }
 }

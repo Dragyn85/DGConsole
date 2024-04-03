@@ -177,6 +177,7 @@ namespace DragynGames.Console
             if (input.Length == 0 || !IsCommand(input))
             {
                 RemoveTips();
+                return;
             }
             else
             {

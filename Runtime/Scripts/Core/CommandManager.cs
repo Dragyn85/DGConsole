@@ -12,15 +12,15 @@ namespace DragynGames.Commands
 {
     public class CommandManager
     {
-        private  List<CommandInfo> sortedCommands = new List<CommandInfo>();
+        private List<CommandInfo> sortedCommands = new List<CommandInfo>();
         private CommandTypeParser _commandTypeParser;
         private ConsoleBuiltInActions _consoleBuiltInActions;
-        public  CommandSystemSettings _settings = new CommandSystemSettings();
+        public CommandSystemSettings _settings = new CommandSystemSettings();
         private CachedMethodFinder cachedMethodFinder = new CachedMethodFinder();
-        
+
         private CancellationTokenSource codeCompletionCancellationTokenSource;
         private int msForCodeCompletion = 150;
-        
+
 
         public CommandManager(bool useBuiltInCommands = true)
 
@@ -40,7 +40,7 @@ namespace DragynGames.Commands
                 _consoleBuiltInActions.AddHelpCommands();
             }
         }
-        
+
         public void GetSuggestions(string commands, Action<List<string>> callback)
         {
             // Cancel the previous task
@@ -54,10 +54,12 @@ namespace DragynGames.Commands
             codeCompletionCancellationTokenSource = new CancellationTokenSource();
 
             // Start a new task without awaiting it
-            cachedMethodFinder.GetCommandSuggestionsAsync(commands, sortedCommands, _settings.caseInsensitiveComparer, commands, callback,msForCodeCompletion, codeCompletionCancellationTokenSource.Token);
+            _ = cachedMethodFinder.GetCommandSuggestionsAsync(commands, sortedCommands,
+                _settings.caseInsensitiveComparer, commands, callback, msForCodeCompletion,
+                codeCompletionCancellationTokenSource.Token);
         }
 
-        public  void RegisterObjectInstance(object consoleAction)
+        public void RegisterObjectInstance(object consoleAction)
         {
             var instance = consoleAction;
             Type type = instance.GetType();
@@ -70,7 +72,7 @@ namespace DragynGames.Commands
             }
         }
 
-        private  void AddCommand(
+        private void AddCommand(
             string[] parameterNames, CommandDefinitionData commandDefinitionData)
         {
             var command = commandDefinitionData.Command;
@@ -110,6 +112,7 @@ namespace DragynGames.Commands
             int commandIndex = FindCommandInfoIndex(consoleMethodInfo);
             sortedCommands.Insert(commandIndex, consoleMethodInfo);
         }
+
         public void AddCommand(string methodName, string description, Type ownerType,
             object instance, string[] parameterNames)
         {
@@ -128,67 +131,66 @@ namespace DragynGames.Commands
                 description = description,
                 instance = instance
             };
-            
+
             CommandDefinitionData commandDefinitionData =
                 new CommandDefinitionData(null, method, commandType, info);
             AddCommand(parameterNames, commandDefinitionData);
-            
         }
 
         public void AddCommand(string command, string description, object callerObject, Delegate method,
-    params string[] parameterNames)
-{
-    // Get the method from the class
-    MethodInfo methodInfo = method.Method;
-
-    if (methodInfo == null)
-    {
-        Debug.LogError(method.Method.Name + " does not exist in " + method.Target.GetType());
-        return;
-    }
-
-    // Get the delegate's parameter names
-    var delegateParameterNames = methodInfo.GetParameters().Select(p => p.Name).ToArray();
-    string[] finalParameterNames = new string[delegateParameterNames.Length];
-    
-    // If there are too few parameterNames, use the delegate's parameter names
-    if (parameterNames.Length < delegateParameterNames.Length)
-    {
-        for (int i = 0; i < parameterNames.Length; i++)
+            params string[] parameterNames)
         {
-            finalParameterNames[i] = parameterNames[i];
-            
-        }
-        for (int i = parameterNames.Length; i < delegateParameterNames.Length; i++)
-        {
-            finalParameterNames[i] = delegateParameterNames[i];
-        }
-    }
-    else if (parameterNames.Length > delegateParameterNames.Length)
-    {
-        Debug.LogError("Too many parameter names for " + method.Method.Name);
-        return;
-    }
-    else
-    {
-        finalParameterNames = parameterNames;
-    }
+            // Get the method from the class
+            MethodInfo methodInfo = method.Method;
 
-    CommandType commandType = CommandMethodAssemblyFinder.FindCommandType(methodInfo);
-    ManualCommandCreationInfo info = new ManualCommandCreationInfo
-    {
-        commandName = command,
-        description = description,
-        instance = callerObject
-    };
-    CommandDefinitionData commandDefinitionData =
-        new CommandDefinitionData(null, methodInfo, commandType, info);
-    AddCommand(finalParameterNames, commandDefinitionData);
-}
+            if (methodInfo == null)
+            {
+                Debug.LogError(method.Method.Name + " does not exist in " + method.Target.GetType());
+                return;
+            }
+
+            // Get the delegate's parameter names
+            var delegateParameterNames = methodInfo.GetParameters().Select(p => p.Name).ToArray();
+            string[] finalParameterNames = new string[delegateParameterNames.Length];
+
+            // If there are too few parameterNames, use the delegate's parameter names
+            if (parameterNames.Length < delegateParameterNames.Length)
+            {
+                for (int i = 0; i < parameterNames.Length; i++)
+                {
+                    finalParameterNames[i] = parameterNames[i];
+                }
+
+                for (int i = parameterNames.Length; i < delegateParameterNames.Length; i++)
+                {
+                    finalParameterNames[i] = delegateParameterNames[i];
+                }
+            }
+            else if (parameterNames.Length > delegateParameterNames.Length)
+            {
+                Debug.LogError("Too many parameter names for " + method.Method.Name);
+                return;
+            }
+            else
+            {
+                finalParameterNames = parameterNames;
+            }
+
+            CommandType commandType = CommandMethodAssemblyFinder.FindCommandType(methodInfo);
+            ManualCommandCreationInfo info = new ManualCommandCreationInfo
+            {
+                commandName = command,
+                description = description,
+                instance = callerObject
+            };
+            CommandDefinitionData commandDefinitionData =
+                new CommandDefinitionData(null, methodInfo, commandType, info);
+            AddCommand(finalParameterNames, commandDefinitionData);
+        }
 
 
         public void RemoveCommand(Delegate method) => RemoveCommand(method.Method);
-        
+
         public void RemoveCommand(MethodInfo method)
         {
             if (method != null)
@@ -274,7 +276,7 @@ namespace DragynGames.Commands
             return results;
         }
 
-        private  bool TryFindGameObject(Type type, string targetObjectName, out object targetObject)
+        private bool TryFindGameObject(Type type, string targetObjectName, out object targetObject)
         {
             bool results = true;
             targetObject = null;
@@ -365,7 +367,7 @@ namespace DragynGames.Commands
             return methodToExecute;
         }
 
-        private  Type[] GetParameterTypes(ParameterInfo[] parameters)
+        private Type[] GetParameterTypes(ParameterInfo[] parameters)
         {
             Type[] parameterTypes = new Type[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
@@ -392,7 +394,7 @@ namespace DragynGames.Commands
             return parameterTypes;
         }
 
-        private  string CreateMethodSignature(string command, string description, string[] parameterNames,
+        private string CreateMethodSignature(string command, string description, string[] parameterNames,
             Type[] parameterTypes, ParameterInfo[] parameters, out string[] parameterSignatures)
         {
             string ms;
@@ -429,7 +431,7 @@ namespace DragynGames.Commands
             return ms;
         }
 
-        private  int FindCommandInfoIndex(CommandInfo commandInfo)
+        private int FindCommandInfoIndex(CommandInfo commandInfo)
         {
             string command = commandInfo.command;
             Type[] parameterTypes = commandInfo.parameterTypes;
@@ -480,7 +482,7 @@ namespace DragynGames.Commands
             return commandIndex;
         }
 
-        public  string GetTypeReadableName(Type type)
+        public string GetTypeReadableName(Type type)
         {
             string result;
             if (ReadableTypes.TryGetReadableName(type, out result))
@@ -498,16 +500,14 @@ namespace DragynGames.Commands
             return type.Name;
         }
 
-        internal  List<CommandInfo> GetMethods()
+        internal List<CommandInfo> GetMethods()
         {
             return sortedCommands;
         }
 
-        public  void FindCommandsStartingWithAsync(string trimStart)
+        public void FindCommandsStartingWithAsync(string trimStart)
         {
         }
-
-        
     }
 
     internal enum CommandType
@@ -523,6 +523,7 @@ namespace DragynGames.Commands
         public string ExecutionMessage;
         public object ReturnedObject;
     }
+
     public class CommandSystemSettings
     {
         public readonly char ObjectIdentifier = '@';
@@ -538,6 +539,7 @@ namespace DragynGames.Commands
             caseInsensitiveComparer = compareInfo;
         }
     }
+
     internal struct ManualCommandCreationInfo
     {
         public string commandName;

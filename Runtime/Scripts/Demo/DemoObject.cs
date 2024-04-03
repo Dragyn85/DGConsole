@@ -9,6 +9,7 @@ namespace DragynGames.Commands.Demo
     {
 
         [SerializeField] private int _myInnateValue; 
+        
         IEnumerator Start()
         {
             yield return new WaitForSeconds(1f);
@@ -37,7 +38,7 @@ namespace DragynGames.Commands.Demo
         // METHOD WITH PARAMETERS AND RETURNTYPE
         // Define explanation and parameter names for the command if needed.
         // returned value will be logged to the console.
-        [ConsoleAction("Add", "Adds two numbers to my innate number", "number1", "number2")]
+        [ConsoleAction("AddToMe", "Adds two numbers to my innate number", "number1", "number2")]
         int AddNumbers(int a, int b)
         {
             return a + b + _myInnateValue;
