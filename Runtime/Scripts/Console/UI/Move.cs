@@ -9,6 +9,7 @@ namespace DragynGames.Commands.UI
     {
         [SerializeField] private Transform targetWindow;
 
+        
         private Vector3 windowHoldOffset;
         private bool isWindowGrabbed;
 
