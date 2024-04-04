@@ -2196,6 +2196,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 888965714281647532, guid: 37e1596abac2adf4fa22fd2186b692fd, type: 3}
+      propertyPath: responsivenessMultiplier
+      value: 1.8
+      objectReference: {fileID: 0}
     - target: {fileID: 1147475010233956307, guid: 37e1596abac2adf4fa22fd2186b692fd, type: 3}
       propertyPath: m_Name
       value: GDConsole
