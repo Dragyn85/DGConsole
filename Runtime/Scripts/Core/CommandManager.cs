@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace DragynGames.Commands
 {
@@ -283,7 +284,8 @@ namespace DragynGames.Commands
 
             if (string.IsNullOrEmpty(targetObjectName))
             {
-                targetObject = UnityEngine.Object.FindFirstObjectByType(type);
+                
+                targetObject = FindTargetType(type);
                 if (targetObject == null)
                 {
                     results = false;
@@ -323,6 +325,8 @@ namespace DragynGames.Commands
 
             return results;
         }
+
+        
 
         private CommandInfo FindMatchingMethod(out object[] parameters, List<string> commandArguments,
             List<CommandInfo> matchingMethods)
@@ -480,6 +484,15 @@ namespace DragynGames.Commands
             }
 
             return commandIndex;
+        }
+        
+        private static Object FindTargetType(Type type)
+        {
+#if UNITY_2023_1_OR_NEWER
+            return UnityEngine.Object.FindFirstObjectByType(type);
+#else
+            return UnityEngine.Object.FindObjectOfType(type);
+#endif
         }
 
         public string GetTypeReadableName(Type type)

@@ -56,7 +56,7 @@ namespace DragynGames
 
         #region TextSize
 
-        [ConsoleAction("TextSize", "Sets the text size of the console", "textSize")]
+        [ConsoleAction("Setting.TextSize", "Sets the text size of the console", "textSize")]
         public void SetTextSize(int textSize)
         {
             settingsData.TextSize = textSize;
@@ -64,14 +64,14 @@ namespace DragynGames
             OnSettingsChanged?.Invoke();
         }
 
-        [ConsoleAction("TextSize", "Returns the size of the font")]
+        [ConsoleAction("Setting.TextSize", "Returns the size of the font")]
         public int GetTextSize() => settingsData.TextSize;
 
         #endregion
 
         #region Background
 
-        [ConsoleAction("BGcolor",
+        [ConsoleAction("Setting.BGcolor",
             "Sets the background color of the console, ex. \"BGcolor red\" and \"BGcolor (1 0 0)\" both sets bg to red.",
             "color")]
         public void SetBackgroundColor(Color color)
@@ -83,7 +83,7 @@ namespace DragynGames
 
         public Color GetBackgroundColor() => settingsData.Color;
 
-        [ConsoleAction("Transparency", "Sets the transparency max 80 percentage", "transparency percentage")]
+        [ConsoleAction("Setting.Transparency", "Sets the transparency max 80 percentage", "transparency percentage")]
         public void SetTransparency(float transparencyPercentage)
         {
             float alpha;
@@ -99,7 +99,7 @@ namespace DragynGames
             OnSettingsChanged?.Invoke();
         }
 
-        [ConsoleAction("Alpha", "Returns the transparency")]
+        [ConsoleAction("Setting.Alpha", "Returns the transparency")]
         public float GetAlpha() => settingsData.Alpha;
 
         #endregion
@@ -108,7 +108,7 @@ namespace DragynGames
 
         public bool ShouldScrollToBottom => settingsData.ScrollToBottom;
 
-        [ConsoleAction("FollowMessages", "Sets the console to scroll down to follow latest message", "Should follow")]
+        [ConsoleAction("Setting.FollowMessages", "Sets the console to scroll down to follow latest message", "Should follow")]
         public void SetScrollToBottom(bool value)
         {
             settingsData.ScrollToBottom = value;
@@ -122,7 +122,7 @@ namespace DragynGames
 
         public bool ShouldPrintLogs => settingsData.PrintLogs;
 
-        [ConsoleAction("PrintLogs", "Sets the console to print logs", "Should print")]
+        [ConsoleAction("Setting.PrintLogs", "Sets the console to print logs", "Should print")]
         public void SetPrintLogs(bool value)
         {
             settingsData.PrintLogs = value;
@@ -130,7 +130,7 @@ namespace DragynGames
             OnSettingsChanged?.Invoke();
         }
 
-        [ConsoleAction("PrintStackTrace",
+        [ConsoleAction("Setting.PrintStackTrace",
             "parameters: Error,Assert,Warning,Log,Exception. Ex [1 0 0 0 0] turns on errors stacktrace",
             "Should print")]
         public void SetAcceptedStackTraces(bool[] stackTraces)
@@ -140,7 +140,7 @@ namespace DragynGames
             OnSettingsChanged?.Invoke();
         }
 
-        [ConsoleAction("PrintLogTypes",
+        [ConsoleAction("Setting.PrintLogTypes",
             "parameters: Error,Assert,Warning,Log,Exception. Ex [1 0 0 0 0] turns only errors on", "Should print")]
         public void SetAcceptedLogTypes(bool[] logTypes)
         {
@@ -161,7 +161,7 @@ namespace DragynGames
 
         #endregion
 
-        [ConsoleAction("ResetSettings", "Resets the settings to default")]
+        [ConsoleAction("Setting.ResetSettings", "Resets the settings to default")]
         public void ResetSettings()
         {
             settingsData = new SettingsData();
@@ -169,7 +169,7 @@ namespace DragynGames
             OnSettingsChanged?.Invoke();
         }
 
-        [ConsoleAction("GetSettings", "Returns the current settings")]
+        [ConsoleAction("Setting.GetSettings", "Returns the current settings")]
         public string GetSettings()
         {
             return JsonUtility.ToJson(settingsData, true);

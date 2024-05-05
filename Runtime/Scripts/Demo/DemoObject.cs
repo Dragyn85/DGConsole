@@ -28,7 +28,7 @@ namespace DragynGames.Commands.Demo
         // NONE STATIC METHOD INSIDE A MONOBEHAVIOUR CLASS
         // MethodHandle will look for a gameobject of method holder type and register it.
         
-        [ConsoleAction("DS", "Does stuff")]
+        [ConsoleAction("DS", "Destroy this gameobject stuff")]
         void DoStuff()
         {
             Debug.LogError("DOING STUFF!");
