@@ -303,7 +303,7 @@ namespace DragynGames.Commands
                     var component = possibleTarget.GetComponent(type);
                     if (component == null)
                     {
-                        var gameObject = GameObject.FindObjectsByType<GameObject>(FindObjectsSortMode.InstanceID)
+                        var gameObject = Object.FindObjectsOfType<GameObject>()
                             .Where(t => t.name == targetObjectName).ToList()
                             .FirstOrDefault(t => t.TryGetComponent(out component));
 
