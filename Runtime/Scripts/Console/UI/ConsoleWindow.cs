@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
+using DragynGames.Console.UI;
 
 namespace DragynGames.Console
 {
@@ -24,10 +25,11 @@ namespace DragynGames.Console
         [SerializeField] TMP_Text messagePrefab;
         [SerializeField] ScrollRect scrollRect;
         [SerializeField] Image backGround;
+        [SerializeField] RectTransform window;
 
 
-        [Space(10)] [Header("Commands")] [SerializeField]
-        char[] commandPrefix;
+        [Space(10)] [Header("Commands")] 
+        [SerializeField] char[] commandPrefix;
 
         [SerializeField] Transform commandTipArea;
 
@@ -61,6 +63,15 @@ namespace DragynGames.Console
             AddListeners();
 
             UpdateSettings();
+            
+            var size = _settings.GetSize();
+            var position = _settings.GetPosition();
+            if (size != Vector2.zero)
+            {
+                window.sizeDelta = size;
+                window.anchoredPosition = position;
+            }
+            
         }
 
         private void OnDestroy()
@@ -144,6 +155,13 @@ namespace DragynGames.Console
             inputField.onDeselect.AddListener(HandleDeselect);
             inputField.onEndEdit.AddListener(HandleDeselect);
             _settings.OnSettingsChanged += UpdateSettings;
+            GetComponentInChildren<Move>().OnMoveFinished += HandlePositionChange;
+            GetComponentInChildren<Resize>().OnResizeFinished += HandlePositionChange;
+        }
+        
+        private void HandlePositionChange()
+        {
+            _settings.SavePosition(window.anchoredPosition,window.sizeDelta);
         }
 
         private void HandleDeselect(string text)

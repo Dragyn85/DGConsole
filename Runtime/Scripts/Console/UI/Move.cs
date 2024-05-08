@@ -1,9 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace DragynGames.Commands.UI
+namespace DragynGames.Console.UI
 {
     internal class Move : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
@@ -12,6 +13,8 @@ namespace DragynGames.Commands.UI
         
         private Vector3 windowHoldOffset;
         private bool isWindowGrabbed;
+        
+        public event Action OnMoveFinished;
 
         public void OnPointerDown(PointerEventData eventData) {
             windowHoldOffset = targetWindow.position - (Vector3)eventData.position;
@@ -28,6 +31,7 @@ namespace DragynGames.Commands.UI
 
         public void OnPointerUp(PointerEventData eventData) {
             isWindowGrabbed = false;
+            OnMoveFinished?.Invoke();
         }
     }
 }

@@ -1,11 +1,6 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using DragynGames.Commands;
-using TMPro;
 using UnityEngine;
-using UnityEngine.Serialization;
-using UnityEngine.UI;
 
 namespace DragynGames
 {
@@ -174,6 +169,23 @@ namespace DragynGames
         {
             return JsonUtility.ToJson(settingsData, true);
         }
+
+        public void SavePosition(Vector2 anchoredPosition, Vector2 rectSizeDelta)
+        {
+            settingsData.position = anchoredPosition;
+            settingsData.size = rectSizeDelta;
+            SaveSettings();
+        }
+
+        public Vector2 GetSize()
+        {
+            return settingsData.size;
+        }
+
+        public Vector2 GetPosition()
+        {
+            return settingsData.position;
+        }
     }
 
     [Serializable]
@@ -186,5 +198,8 @@ namespace DragynGames
         public bool PrintLogs = true;
         public bool[] printLogTypes = new bool[5] {true, true, true, true, true};
         public bool[] printStackTrace = new bool[5] {false, false, false, false, false};
+        public Vector2 position;
+        public Vector2 size;
+        
     }
 }

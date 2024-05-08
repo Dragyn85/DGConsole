@@ -1,8 +1,11 @@
 using System.Collections;
+using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using Screen = UnityEngine.Screen;
+using Action = System.Action;
 
-namespace DragynGames.Commands.UI
+namespace DragynGames.Console.UI
 {
     internal class Resize : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
@@ -14,6 +17,7 @@ namespace DragynGames.Commands.UI
         private Vector2 startPosition;
         private Vector2 startSize;
 
+        public event Action OnResizeFinished;
         public void OnPointerDown(PointerEventData eventData)
         {
             startPosition = eventData.position;
@@ -48,6 +52,7 @@ namespace DragynGames.Commands.UI
 
         public void OnPointerUp(PointerEventData eventData) {
             isWindowGrabbed = false;
+            OnResizeFinished?.Invoke();
         }
     }
 }
