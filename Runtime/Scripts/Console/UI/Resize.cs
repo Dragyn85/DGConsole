@@ -1,5 +1,4 @@
 using System.Collections;
-using Unity.Android.Gradle.Manifest;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using Screen = UnityEngine.Screen;
