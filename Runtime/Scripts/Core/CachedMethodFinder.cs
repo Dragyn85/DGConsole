@@ -15,6 +15,7 @@ namespace DragynGames.Commands
             int msForCodeCompletion,
             CancellationToken cancellationToken)
         {
+            bool findTarget = command.Contains("@");
             await Task.Delay(msForCodeCompletion, cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)

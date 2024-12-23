@@ -717,6 +717,15 @@ namespace DragynGames.Commands
         private static string ExtractTarget(ref string command, char objIdentifier)
         {
             string commandTarget = null;
+            string objIdentifierStr = objIdentifier.ToString()+objIdentifier.ToString();
+            if(command.Contains(objIdentifierStr))
+            {
+                commandTarget = "@@";
+                command = command.Substring(0, command.IndexOf(objIdentifierStr));
+            }
+            {
+                
+            }
             if (command.Contains(objIdentifier))
             {
                 // get everything after the object identifier and pass it to commandTarget
@@ -724,6 +733,7 @@ namespace DragynGames.Commands
                 // remove the object identifier and everthing behind from the command
                 command = command.Substring(0, command.IndexOf(objIdentifier));
             }
+            
 
             return commandTarget;
         }
