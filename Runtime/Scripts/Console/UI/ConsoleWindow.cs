@@ -47,6 +47,9 @@ namespace DragynGames.Console
         private int selectedLastCommand;
         private int maxStoredInputs = 10;
         private string currentInput;
+        
+        int selectedSuggestionIndex = 0;
+        List<string> currentSuggestions = new List<string>();
 
         private ConsoleSettings _settings;
 
@@ -213,7 +216,7 @@ namespace DragynGames.Console
             {
                 return;
             }
-
+            
             inputField.SetTextWithoutNotify(string.Empty);
             inputField.ActivateInputField();
 
@@ -288,7 +291,7 @@ namespace DragynGames.Console
             if (!visible)
                 return;
 
-            if (Input.GetKeyDown(KeyCode.UpArrow) && inputField.isFocused && lastInputs.Count > 0)
+            if (Input.GetKeyDown(KeyCode.UpArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused && lastInputs.Count > 0)
             {
                 selectedLastCommand--;
                 if (selectedLastCommand < 0)
@@ -299,10 +302,11 @@ namespace DragynGames.Console
                 else
                 {
                     inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
+                    inputField.caretPosition = inputField.text.Length;
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.DownArrow) && inputField.isFocused && lastInputs.Count > 0)
+            if (Input.GetKeyDown(KeyCode.DownArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused && lastInputs.Count > 0)
             {
                 selectedLastCommand++;
                 if (selectedLastCommand >= lastInputs.Count)
@@ -313,7 +317,27 @@ namespace DragynGames.Console
                 else
                 {
                     inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
+                    inputField.caretPosition = inputField.text.Length;
                 }
+            }
+            if ((Input.GetKeyDown(KeyCode.UpArrow) && Input.GetKey(KeyCode.LeftControl)) && currentSuggestions.Count > 0)
+            {
+                selectedSuggestionIndex--;
+                if (selectedSuggestionIndex < 0)
+                {
+                    selectedSuggestionIndex = currentSuggestions.Count - 1;
+                }
+                inputField.SetTextWithoutNotify(currentSuggestions[selectedSuggestionIndex]);
+            }
+
+            if (Input.GetKeyDown(KeyCode.DownArrow) &&Input.GetKey(KeyCode.LeftControl) && currentSuggestions.Count > 0)
+            {
+                selectedSuggestionIndex++;
+                if (selectedSuggestionIndex >= currentSuggestions.Count)
+                {
+                    selectedSuggestionIndex = 0;
+                }
+                inputField.SetTextWithoutNotify(currentSuggestions[selectedSuggestionIndex]);
             }
         }
 
@@ -334,6 +358,8 @@ namespace DragynGames.Console
         private void ShowAutocomplete(List<string> methodDescriptions)
         {
             RemoveTips();
+            currentSuggestions = methodDescriptions;
+            selectedSuggestionIndex = -1;
 
             for (int i = 0; i < methodDescriptions.Count; i++)
             {

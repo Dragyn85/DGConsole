@@ -24,19 +24,20 @@ namespace DragynGames.Commands
             }
 
             List<CommandInfo> matchingCommands = new List<CommandInfo>();
-            List<CommandInfo> numberOfParameters = await Task.Run(() => GetCommandSuggestions(
+            await Task.Run(() => GetCommandSuggestions(
                 command,
                 methods,
                 matchingCommands,
                 caseInsensitiveComparer));
-            List<string> commandSignatures = new List<string>();
-            foreach (CommandInfo commandInfo in numberOfParameters)
-            {
-                commandSignatures.Add(commandInfo.signature);
-            }
-
             if (!cancellationToken.IsCancellationRequested)
             {
+                List<string> commandSignatures = new List<string>();
+                foreach (CommandInfo commandInfo in matchingCommands)
+                {
+                    commandSignatures.Add(commandInfo.signature);
+                }
+
+
                 callback.Invoke(commandSignatures);
             }
         }
@@ -50,7 +51,7 @@ namespace DragynGames.Commands
             int numberOfParameters = -1;
             bool commandNameCalculated = false;
             bool commandNameFullyTyped = false;
-            
+
             for (int i = 0; i < command.Length; i++)
             {
                 if (char.IsWhiteSpace(command[i]))
@@ -173,7 +174,9 @@ namespace DragynGames.Commands
 
             return ~min;
         }
-        internal static int FindFirstCommandIndex(string command, IReadOnlyList<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
+
+        internal static int FindFirstCommandIndex(string command, IReadOnlyList<CommandInfo> methods,
+            CompareInfo caseInsensitiveComparer)
         {
             int min = 0;
             int max = methods.Count - 1;
@@ -190,6 +193,7 @@ namespace DragynGames.Commands
                     {
                         mid--;
                     }
+
                     return mid;
                 }
                 else if (comparison < 0)
