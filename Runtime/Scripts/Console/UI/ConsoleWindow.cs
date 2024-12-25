@@ -327,7 +327,10 @@ namespace DragynGames.Console
                 {
                     selectedSuggestionIndex = currentSuggestions.Count - 1;
                 }
-                inputField.SetTextWithoutNotify(currentSuggestions[selectedSuggestionIndex]);
+
+                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
+                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+                inputField.caretPosition = inputField.text.Length;
             }
 
             if (Input.GetKeyDown(KeyCode.DownArrow) &&Input.GetKey(KeyCode.LeftControl) && currentSuggestions.Count > 0)
@@ -337,7 +340,9 @@ namespace DragynGames.Console
                 {
                     selectedSuggestionIndex = 0;
                 }
-                inputField.SetTextWithoutNotify(currentSuggestions[selectedSuggestionIndex]);
+                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
+                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+                inputField.caretPosition = inputField.text.Length;
             }
         }
 
@@ -355,15 +360,16 @@ namespace DragynGames.Console
             }
         }
 
-        private void ShowAutocomplete(List<string> methodDescriptions)
+        private void ShowAutocomplete(List<SuggestionData> suggestionDatas)
         {
             RemoveTips();
-            currentSuggestions = methodDescriptions;
+            List<string> suggestions = suggestionDatas.Select(t => t.command).ToList();
+            currentSuggestions = suggestions;
             selectedSuggestionIndex = -1;
 
-            for (int i = 0; i < methodDescriptions.Count; i++)
+            for (int i = 0; i < suggestionDatas.Count; i++)
             {
-                string method = methodDescriptions[i];
+                string method = suggestionDatas[i].suggestionText;
                 TMP_Text newTip = Instantiate(messagePrefab);
                 newTip.SetText(method);
                 newTip.transform.SetParent(commandTipArea, false);
@@ -373,7 +379,7 @@ namespace DragynGames.Console
                 }
             }
 
-            int amountOfTime = methodDescriptions.Count > maxNumberOfTips ? maxNumberOfTips : methodDescriptions.Count;
+            int amountOfTime = suggestionDatas.Count > maxNumberOfTips ? maxNumberOfTips : suggestionDatas.Count;
 
             UpdateTipLayout(amountOfTime);
         }

@@ -11,11 +11,10 @@ namespace DragynGames.Commands
     public class CachedMethodFinder
     {
         internal async Task GetCommandSuggestionsAsync(string command, IReadOnlyList<CommandInfo> methods,
-            CompareInfo caseInsensitiveComparer, string commandName, Action<List<string>> callback,
+            CompareInfo caseInsensitiveComparer, Action<List<SuggestionData>> callback,
             int msForCodeCompletion,
             CancellationToken cancellationToken)
         {
-            bool findTarget = command.Contains("@");
             await Task.Delay(msForCodeCompletion, cancellationToken);
 
             if (cancellationToken.IsCancellationRequested)
@@ -31,14 +30,18 @@ namespace DragynGames.Commands
                 caseInsensitiveComparer));
             if (!cancellationToken.IsCancellationRequested)
             {
-                List<string> commandSignatures = new List<string>();
+                List<SuggestionData> commandSuggestions = new List<SuggestionData>();
                 foreach (CommandInfo commandInfo in matchingCommands)
                 {
-                    commandSignatures.Add(commandInfo.signature);
+                    SuggestionData suggestion = new SuggestionData
+                    {
+                        command = commandInfo.command,
+                        suggestionText = commandInfo.signature
+                    };
+                    commandSuggestions.Add(suggestion);
                 }
 
-
-                callback.Invoke(commandSignatures);
+                callback.Invoke(commandSuggestions);
             }
         }
 
@@ -343,5 +346,11 @@ namespace DragynGames.Commands
 
             return matchingCommands;
         }
+    }
+
+    public class SuggestionData
+    {
+        public string command;
+        public string suggestionText;
     }
 }

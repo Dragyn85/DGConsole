@@ -42,7 +42,7 @@ namespace DragynGames.Commands
             }
         }
 
-        public void GetSuggestions(string commands, Action<List<string>> callback)
+        public void GetSuggestions(string commands, Action<List<SuggestionData>> callback)
         {
             // Cancel the previous task
             if (codeCompletionCancellationTokenSource != null)
@@ -74,7 +74,17 @@ namespace DragynGames.Commands
                     List<string> gameObjectNames = GetGameObjectNamesWithComponent(componentType, partialObjectName);
 
                     // Provide suggestions with the full command
-                    List<string> suggestions = gameObjectNames.Select(name => $"{commandWithoutAt} @{name}").ToList();
+                    List<string> suggestionStrings = gameObjectNames.Select(name => $"{commandWithoutAt} @{name}").ToList();
+                    List<SuggestionData> suggestions = new List<SuggestionData>();
+                    foreach (var suggestionString in suggestionStrings) 
+                    {
+                        SuggestionData suggestion = new SuggestionData
+                        {
+                            command = suggestionString,
+                            suggestionText = suggestionString
+                        };
+                        suggestions.Add(suggestion);
+                    }
                     callback(suggestions);
                     return;
                 }
@@ -82,7 +92,7 @@ namespace DragynGames.Commands
 
             // Start a new task without awaiting it
             _ = cachedMethodFinder.GetCommandSuggestionsAsync(commands, sortedCommands,
-                _settings.caseInsensitiveComparer, commands, callback, msForCodeCompletion,
+                _settings.caseInsensitiveComparer, callback, msForCodeCompletion,
                 codeCompletionCancellationTokenSource.Token);
         }
 
