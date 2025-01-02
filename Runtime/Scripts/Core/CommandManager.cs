@@ -42,7 +42,7 @@ namespace DragynGames.Commands
             }
         }
 
-        public void GetSuggestions(string commands, Action<List<string>> callback)
+        public void GetSuggestions(string commands, Action<List<SuggestionData>> callback)
         {
             // Cancel the previous task
             if (codeCompletionCancellationTokenSource != null)
@@ -54,9 +54,45 @@ namespace DragynGames.Commands
             // Create a new CancellationTokenSource
             codeCompletionCancellationTokenSource = new CancellationTokenSource();
 
+            // Check if the command contains '@'
+            if (commands.Contains("@"))
+            {
+                // Split the command at '@'
+                string[] parts = commands.Split('@');
+                string commandWithoutAt = parts[0].Trim();
+                string partialObjectName = parts.Length > 1 ? parts[1].Trim() : string.Empty;
+
+                // Find matching methods
+                var argumentsForCommand = CommandTypeParser.SplitIntoArgumentsForCommand(commandWithoutAt, out _, _settings.ObjectIdentifier);
+                var matchingMethods = CachedMethodFinder.GetMatchingMethods(argumentsForCommand, sortedCommands, _settings.caseInsensitiveComparer);
+                var methodToExecute = FindMatchingMethod(out _, argumentsForCommand, matchingMethods);
+
+                if (methodToExecute != null)
+                {
+                    // Get game object names with the component type
+                    Type componentType = methodToExecute.method.DeclaringType;
+                    List<string> gameObjectNames = GetGameObjectNamesWithComponent(componentType, partialObjectName);
+
+                    // Provide suggestions with the full command
+                    List<string> suggestionStrings = gameObjectNames.Select(name => $"{commandWithoutAt} @{name}").ToList();
+                    List<SuggestionData> suggestions = new List<SuggestionData>();
+                    foreach (var suggestionString in suggestionStrings) 
+                    {
+                        SuggestionData suggestion = new SuggestionData
+                        {
+                            command = suggestionString,
+                            suggestionText = suggestionString
+                        };
+                        suggestions.Add(suggestion);
+                    }
+                    callback(suggestions);
+                    return;
+                }
+            }
+
             // Start a new task without awaiting it
             _ = cachedMethodFinder.GetCommandSuggestionsAsync(commands, sortedCommands,
-                _settings.caseInsensitiveComparer, commands, callback, msForCodeCompletion,
+                _settings.caseInsensitiveComparer, callback, msForCodeCompletion,
                 codeCompletionCancellationTokenSource.Token);
         }
 
@@ -205,88 +241,100 @@ namespace DragynGames.Commands
         }
 
         public bool ExecuteMethod(string command, out CommandExecutionResult commandExecutionResult)
+{
+    bool shouldFindObjects = false;
+    commandExecutionResult = new CommandExecutionResult();
+    bool results = true;
+
+    command = command.Trim();
+    string targetObjectName;
+
+    if (string.IsNullOrEmpty(command))
+        return false;
+
+    // Check for @* case
+    if (command.Contains("@*"))
+    {
+        shouldFindObjects = true;
+    }
+
+    // Existing code for parsing and executing commands
+    var argumentsForCommand = CommandTypeParser.SplitIntoArgumentsForCommand(command, out targetObjectName, _settings.ObjectIdentifier);
+    var matchingMethods = CachedMethodFinder.GetMatchingMethods(argumentsForCommand, sortedCommands, _settings.caseInsensitiveComparer);
+    var methodToExecute = FindMatchingMethod(out var parameters, argumentsForCommand, matchingMethods);
+    if (methodToExecute == null)
+    {
+        commandExecutionResult.ExecutionMessage = "Command not found";
+        return false;
+    }
+    if (shouldFindObjects)
+    {
+        //return the names of the game objects that have the component
+        Type theType =  methodToExecute.method.DeclaringType;
+        commandExecutionResult.ReturnedObject = GetGameObjectNamesWithComponent(theType);
+        return true;
+    }
+
+    List<object> targetObject = new List<object>();
+    switch (methodToExecute.commandType)
+    {
+        case CommandType.Invalid:
+            Debug.LogError("Invalid command type");
+            results = false;
+            commandExecutionResult.ExecutionMessage = "Invalid command type";
+            break;
+        case CommandType.Static:
+            break;
+        case CommandType.Instanced:
+            results = methodToExecute.TryGetInstnace(out object target);
+            targetObject.Add(target);
+            break;
+        case CommandType.MonoBehaviour:
+            if (methodToExecute.method.IsStatic)
+            {
+                results = true;
+            }
+            else
+            {
+                results = TryFindGameObject(methodToExecute.method.DeclaringType, targetObjectName, out List<object> targets);
+                foreach (var targetp in targets)
+                {
+                    targetObject.Add(targetp);
+                }
+            }
+            break;
+    }
+
+    if (results)
+    {
+        foreach (var target in targetObject)
         {
-            commandExecutionResult = new CommandExecutionResult();
-            bool results = true;
-
-            command = command.Trim();
-            string targetObjectName;
-
-            if (string.IsNullOrEmpty(command))
-                return false;
-
-
-            //Parse string command to get the method name and parameters
-            var argumentsForCommand =
-                CommandTypeParser.SplitIntoArgumentsForCommand(command, out targetObjectName,
-                    _settings.ObjectIdentifier);
-
-            var matchingMethods =
-                CachedMethodFinder.GetMatchingMethods(argumentsForCommand, sortedCommands,
-                    _settings.caseInsensitiveComparer);
-
-            var methodToExecute = FindMatchingMethod(out var parameters, argumentsForCommand, matchingMethods);
-            if (methodToExecute == null)
-            {
-                commandExecutionResult.ExecutionMessage = "Command not found";
-                return false;
-            }
-
-            object targetObject = null;
-            //Determines if the method is static, instanced or a MonoBehaviour
-            switch (methodToExecute.commandType)
-            {
-                case CommandType.Invalid:
-                {
-                    Debug.LogError("Invalid command type");
-                    results = false;
-                    commandExecutionResult.ExecutionMessage = "Invalid command type";
-                    break;
-                }
-                case CommandType.Static:
-                {
-                    break;
-                }
-                case CommandType.Instanced:
-                {
-                    results = methodToExecute.TryGetInstnace(out targetObject);
-                    break;
-                }
-                case CommandType.MonoBehaviour:
-                {
-                    if (methodToExecute.method.IsStatic)
-                    {
-                        results = true;
-                    }
-                    else
-                    {
-                        results = TryFindGameObject(methodToExecute.method.DeclaringType, targetObjectName,
-                            out targetObject);
-                    }
-
-                    break;
-                }
-            }
-
-            if (results)
-            {
-                commandExecutionResult.ReturnedObject = methodToExecute.method.Invoke(targetObject, parameters);
-            }
-            //Execute the method with depending on the type of method
-
-            return results;
+            commandExecutionResult.ReturnedObject = methodToExecute.method.Invoke(target, parameters);
         }
 
-        private bool TryFindGameObject(Type type, string targetObjectName, out object targetObject)
+        if (targetObject.Count == 0)
+        {
+            commandExecutionResult.ReturnedObject = methodToExecute.method.Invoke(methodToExecute, parameters);
+        }
+    }
+
+    return results;
+}
+
+        private bool TryFindGameObject(Type type, string targetObjectName, out List<object> targetObject)
         {
             bool results = true;
-            targetObject = null;
+            targetObject = new List<object>();
 
             if (string.IsNullOrEmpty(targetObjectName))
             {
-                
-                targetObject = FindTargetType(type);
-                if (targetObject == null)
+                var foundTargets = FindTargetType(type);
+                foreach (var target in foundTargets)
+                {
+                    targetObject.Add(target);
+                }
+
+                if (targetObject.Count == 0)
                 {
                     results = false;
                 }
@@ -313,12 +361,12 @@ namespace DragynGames.Commands
                         }
                         else
                         {
-                            targetObject = gameObject;
+                            targetObject.Add(gameObject);
                         }
                     }
                     else
                     {
-                        targetObject = component;
+                        targetObject.Add(component);
                     }
                 }
             }
@@ -326,7 +374,6 @@ namespace DragynGames.Commands
             return results;
         }
 
-        
 
         private CommandInfo FindMatchingMethod(out object[] parameters, List<string> commandArguments,
             List<CommandInfo> matchingMethods)
@@ -434,6 +481,42 @@ namespace DragynGames.Commands
             ms = methodSignature.ToString();
             return ms;
         }
+        
+        public string GetGameObjectNamesWithComponent(Type componentType)
+        {
+            List<string> gameObjectNames = new List<string>();
+            string names = "";
+            var objects = FindTargetType(componentType);
+            foreach (var obj in objects)
+            {
+                if (obj is Component component)
+                {
+                    gameObjectNames.Add(component.gameObject.name);
+                }
+            }
+            StringBuilder sb = new StringBuilder();
+            foreach (var name in gameObjectNames)
+            {
+                sb.Append(name).Append(Environment.NewLine);
+            }
+
+            names = sb.ToString();
+
+            return names;
+        }
+        public List<string> GetGameObjectNamesWithComponent(Type componentType, string partialObjectName)
+        {
+            List<string> gameObjectNames = new List<string>();
+            var objects = FindTargetType(componentType);
+            foreach (var obj in objects)
+            {
+                if (obj is Component component && component.gameObject.name.StartsWith(partialObjectName, StringComparison.OrdinalIgnoreCase))
+                {
+                    gameObjectNames.Add(component.gameObject.name);
+                }
+            }
+            return gameObjectNames;
+        }
 
         private int FindCommandInfoIndex(CommandInfo commandInfo)
         {
@@ -485,13 +568,13 @@ namespace DragynGames.Commands
 
             return commandIndex;
         }
-        
-        private static Object FindTargetType(Type type)
+
+        private static Object[] FindTargetType(Type type)
         {
 #if UNITY_2023_1_OR_NEWER
-            return UnityEngine.Object.FindFirstObjectByType(type);
+            return UnityEngine.Object.FindObjectsByType(type, FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 #else
-            return UnityEngine.Object.FindObjectOfType(type);
+            return UnityEngine.Object.FindObjectsOfType(type,false);
 #endif
         }
 

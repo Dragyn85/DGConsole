@@ -11,7 +11,7 @@ namespace DragynGames.Commands
     public class CachedMethodFinder
     {
         internal async Task GetCommandSuggestionsAsync(string command, IReadOnlyList<CommandInfo> methods,
-            CompareInfo caseInsensitiveComparer, string commandName, Action<List<string>> callback,
+            CompareInfo caseInsensitiveComparer, Action<List<SuggestionData>> callback,
             int msForCodeCompletion,
             CancellationToken cancellationToken)
         {
@@ -23,20 +23,25 @@ namespace DragynGames.Commands
             }
 
             List<CommandInfo> matchingCommands = new List<CommandInfo>();
-            List<CommandInfo> numberOfParameters = await Task.Run(() => GetCommandSuggestions(
+            await Task.Run(() => GetCommandSuggestions(
                 command,
                 methods,
                 matchingCommands,
                 caseInsensitiveComparer));
-            List<string> commandSignatures = new List<string>();
-            foreach (CommandInfo commandInfo in numberOfParameters)
-            {
-                commandSignatures.Add(commandInfo.signature);
-            }
-
             if (!cancellationToken.IsCancellationRequested)
             {
-                callback.Invoke(commandSignatures);
+                List<SuggestionData> commandSuggestions = new List<SuggestionData>();
+                foreach (CommandInfo commandInfo in matchingCommands)
+                {
+                    SuggestionData suggestion = new SuggestionData
+                    {
+                        command = commandInfo.command,
+                        suggestionText = commandInfo.signature
+                    };
+                    commandSuggestions.Add(suggestion);
+                }
+
+                callback.Invoke(commandSuggestions);
             }
         }
 
@@ -49,7 +54,7 @@ namespace DragynGames.Commands
             int numberOfParameters = -1;
             bool commandNameCalculated = false;
             bool commandNameFullyTyped = false;
-            
+
             for (int i = 0; i < command.Length; i++)
             {
                 if (char.IsWhiteSpace(command[i]))
@@ -172,7 +177,9 @@ namespace DragynGames.Commands
 
             return ~min;
         }
-        internal static int FindFirstCommandIndex(string command, IReadOnlyList<CommandInfo> methods, CompareInfo caseInsensitiveComparer)
+
+        internal static int FindFirstCommandIndex(string command, IReadOnlyList<CommandInfo> methods,
+            CompareInfo caseInsensitiveComparer)
         {
             int min = 0;
             int max = methods.Count - 1;
@@ -189,6 +196,7 @@ namespace DragynGames.Commands
                     {
                         mid--;
                     }
+
                     return mid;
                 }
                 else if (comparison < 0)
@@ -338,5 +346,11 @@ namespace DragynGames.Commands
 
             return matchingCommands;
         }
+    }
+
+    public class SuggestionData
+    {
+        public string command;
+        public string suggestionText;
     }
 }
