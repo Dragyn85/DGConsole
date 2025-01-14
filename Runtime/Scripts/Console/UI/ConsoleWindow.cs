@@ -212,6 +212,11 @@ namespace DragynGames.Console
 
         private void inputField_OnSubmit(string consoleInput)
         {
+            SendCommand(consoleInput);
+        }
+
+        private void SendCommand(string consoleInput, GameObject instance = null)
+        {
             if (string.IsNullOrEmpty(consoleInput))
             {
                 return;
@@ -225,7 +230,7 @@ namespace DragynGames.Console
                 string command = consoleInput.Trim(commandPrefix);
 
 
-                if (commandManager.ExecuteMethod(command, out CommandExecutionResult result))
+                if (commandManager.ExecuteMethod(command, out CommandExecutionResult result, instance))
                 {
                     if (result.ReturnedObject != null)
                     {
@@ -291,6 +296,53 @@ namespace DragynGames.Console
             if (!visible)
                 return;
 
+            if (Input.GetMouseButtonDown(0) && Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftControl))
+            {
+                //Raycast for an obeject beneath the mouse
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+                if (Physics.Raycast(ray, out RaycastHit hit))
+                {
+                    GameObject instance = hit.collider.gameObject;
+                    if (instance != null)
+                    {
+                        SendCommand(inputField.text, instance);
+                    }
+                }
+            }
+            HandleHistorySelection();
+            HandleSuggestionSelection();
+        }
+
+        private void HandleSuggestionSelection()
+        {
+            if ((Input.GetKeyDown(KeyCode.UpArrow) && Input.GetKey(KeyCode.LeftControl)) && currentSuggestions.Count > 0)
+            {
+                selectedSuggestionIndex--;
+                if (selectedSuggestionIndex < 0)
+                {
+                    selectedSuggestionIndex = currentSuggestions.Count - 1;
+                }
+
+                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
+                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+                inputField.caretPosition = inputField.text.Length;
+            }
+
+            if (Input.GetKeyDown(KeyCode.DownArrow) &&Input.GetKey(KeyCode.LeftControl) && currentSuggestions.Count > 0)
+            {
+                selectedSuggestionIndex++;
+                if (selectedSuggestionIndex >= currentSuggestions.Count)
+                {
+                    selectedSuggestionIndex = 0;
+                }
+                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
+                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+                inputField.caretPosition = inputField.text.Length;
+            }
+        }
+
+        private void HandleHistorySelection()
+        {
             if (Input.GetKeyDown(KeyCode.UpArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused && lastInputs.Count > 0)
             {
                 selectedLastCommand--;
@@ -319,30 +371,6 @@ namespace DragynGames.Console
                     inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
                     inputField.caretPosition = inputField.text.Length;
                 }
-            }
-            if ((Input.GetKeyDown(KeyCode.UpArrow) && Input.GetKey(KeyCode.LeftControl)) && currentSuggestions.Count > 0)
-            {
-                selectedSuggestionIndex--;
-                if (selectedSuggestionIndex < 0)
-                {
-                    selectedSuggestionIndex = currentSuggestions.Count - 1;
-                }
-
-                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
-                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
-                inputField.caretPosition = inputField.text.Length;
-            }
-
-            if (Input.GetKeyDown(KeyCode.DownArrow) &&Input.GetKey(KeyCode.LeftControl) && currentSuggestions.Count > 0)
-            {
-                selectedSuggestionIndex++;
-                if (selectedSuggestionIndex >= currentSuggestions.Count)
-                {
-                    selectedSuggestionIndex = 0;
-                }
-                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
-                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
-                inputField.caretPosition = inputField.text.Length;
             }
         }
 

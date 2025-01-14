@@ -5,7 +5,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -13,10 +12,11 @@ namespace DragynGames.Commands
 {
     public class CommandManager
     {
+        public CommandSystemSettings _settings = new CommandSystemSettings();
+        
         private List<CommandInfo> sortedCommands = new List<CommandInfo>();
         private CommandTypeParser _commandTypeParser;
         private ConsoleBuiltInActions _consoleBuiltInActions;
-        public CommandSystemSettings _settings = new CommandSystemSettings();
         private CachedMethodFinder cachedMethodFinder = new CachedMethodFinder();
 
         private CancellationTokenSource codeCompletionCancellationTokenSource;
@@ -173,18 +173,17 @@ namespace DragynGames.Commands
                 new CommandDefinitionData(null, method, commandType, info);
             AddCommand(parameterNames, commandDefinitionData);
         }
-
+        
         public void AddCommand(string command, string description, object callerObject, Delegate method,
             params string[] parameterNames)
         {
-            // Get the method from the class
-            MethodInfo methodInfo = method.Method;
-
-            if (methodInfo == null)
+            if (method == null)
             {
-                Debug.LogError(method.Method.Name + " does not exist in " + method.Target.GetType());
+                Debug.LogError("Method is null");
                 return;
             }
+            // Get the method from the class
+            MethodInfo methodInfo = method.Method;
 
             // Get the delegate's parameter names
             var delegateParameterNames = methodInfo.GetParameters().Select(p => p.Name).ToArray();
@@ -225,7 +224,6 @@ namespace DragynGames.Commands
             AddCommand(finalParameterNames, commandDefinitionData);
         }
 
-
         public void RemoveCommand(Delegate method) => RemoveCommand(method.Method);
 
         public void RemoveCommand(MethodInfo method)
@@ -240,9 +238,9 @@ namespace DragynGames.Commands
             }
         }
 
-        public bool ExecuteMethod(string command, out CommandExecutionResult commandExecutionResult)
+        public bool ExecuteMethod(string command, out CommandExecutionResult commandExecutionResult, GameObject forcedTarget = null)
 {
-    bool shouldFindObjects = false;
+    bool shouldFindObjectsNames = false;
     commandExecutionResult = new CommandExecutionResult();
     bool results = true;
 
@@ -253,10 +251,10 @@ namespace DragynGames.Commands
         return false;
 
     // Check for @* case
-    if (command.Contains("@*"))
-    {
-        shouldFindObjects = true;
-    }
+    //if (command.Contains("@*"))
+    //{
+      //  shouldFindObjectsNames = true;
+    //}
 
     // Existing code for parsing and executing commands
     var argumentsForCommand = CommandTypeParser.SplitIntoArgumentsForCommand(command, out targetObjectName, _settings.ObjectIdentifier);
@@ -267,7 +265,7 @@ namespace DragynGames.Commands
         commandExecutionResult.ExecutionMessage = "Command not found";
         return false;
     }
-    if (shouldFindObjects)
+    if (shouldFindObjectsNames)
     {
         //return the names of the game objects that have the component
         Type theType =  methodToExecute.method.DeclaringType;
@@ -296,10 +294,39 @@ namespace DragynGames.Commands
             }
             else
             {
-                results = TryFindGameObject(methodToExecute.method.DeclaringType, targetObjectName, out List<object> targets);
-                foreach (var targetp in targets)
+                if (forcedTarget != null)
                 {
-                    targetObject.Add(targetp);
+                    Type targetType = methodToExecute.method.DeclaringType;
+                    
+                    if (forcedTarget.GetType() == targetType)
+                    {
+                        targetObject.Add(forcedTarget);
+                        results = true;
+                    }
+                    else
+                    {
+                        var targetInChildren = forcedTarget.GetComponentInChildren(targetType);
+                        if (targetInChildren != null)
+                        {
+                            targetObject.Add(targetInChildren);
+                            results = true;
+                        }
+                        else
+                        {
+                            results = false;
+                        }
+                    }
+                    //results = methodToExecute.method.DeclaringType == forcedTarget.GetType();
+                    //targetObject.Add(forcedTarget);
+                    
+                }
+                else
+                {
+                    results = TryFindGameObject(methodToExecute.method.DeclaringType, targetObjectName, out List<object> targets);
+                    foreach (var targetp in targets)
+                    {
+                        targetObject.Add(targetp);
+                    }
                 }
             }
             break;
