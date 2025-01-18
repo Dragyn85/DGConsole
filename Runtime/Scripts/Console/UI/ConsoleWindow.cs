@@ -12,7 +12,7 @@ using UnityEngine.Serialization;
 
 namespace DragynGames.Console
 {
-    internal class ConsoleWindow : MonoBehaviour
+    public class ConsoleWindow : MonoBehaviour
     {
         [Header("Visibility")] [SerializeField]
         KeyCode toggleVisabilty = KeyCode.L;
@@ -55,9 +55,12 @@ namespace DragynGames.Console
         List<string> currentSuggestions = new List<string>();
 
         private ConsoleSettings _settings;
+        List<IConsoleComponent> consoleComponents = new ();
 
         //Highlighting
-        private HighLighting currentHighlight;
+        
+        
+        private ObjectMouseSelection _objectMouseSelection;
 
         [FormerlySerializedAs("highlighMaterial")] [FormerlySerializedAs("outlineMaterial")] [SerializeField]
         Material highlightMaterial;
@@ -68,6 +71,11 @@ namespace DragynGames.Console
             _settings = new ConsoleSettings();
             commandManager.RegisterObjectInstance(_settings);
             commandManager.RegisterObjectInstance(this);
+
+            foreach (var consoleComponent in GetComponents<IConsoleComponent>())
+            {
+                AttachConsoleComponent(consoleComponent);
+            }
 
             inputField = GetComponentInChildren<TMP_InputField>();
             canvasGroup = GetComponentInChildren<CanvasGroup>();
@@ -83,6 +91,12 @@ namespace DragynGames.Console
                 window.sizeDelta = size;
                 window.anchoredPosition = position;
             }
+        }
+
+        private void AttachConsoleComponent(IConsoleComponent consoleComponent)
+        {
+            consoleComponent.OnConsoleWindowAttached(this);
+            consoleComponents.Add(consoleComponent);
         }
 
         private void OnDestroy()
@@ -300,64 +314,19 @@ namespace DragynGames.Console
 
             if (!visible)
                 return;
-
-            if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift))
+            
+            foreach (var consoleComponent in consoleComponents)
             {
-                HandleHighlight();
+                consoleComponent.Tick(Time.deltaTime);
             }
-            else if (Input.GetKeyUp(KeyCode.LeftControl) || Input.GetKeyUp(KeyCode.LeftShift))
-            {
-                if (currentHighlight != null)
-                {
-                    currentHighlight.RemoveHighlight();
-                }
 
-                currentHighlight = null;
-            }
+            
 
             HandleHistorySelection();
             HandleSuggestionSelection();
         }
 
-        private void HandleHighlight()
-        {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out RaycastHit hit))
-            {
-                GameObject hitObject = hit.collider.gameObject;
-
-                if (currentHighlight == null)
-                {
-                    currentHighlight = hitObject.AddComponent<HighLighting>();
-                    currentHighlight.ActivateHighlight(highlightMaterial, true);
-                }
-                else if (currentHighlight.gameObject != hitObject)
-                {
-                    currentHighlight.RemoveHighlight();
-                    currentHighlight = hitObject.AddComponent<HighLighting>();
-                    currentHighlight.ActivateHighlight(highlightMaterial, true);
-                }
-
-                if (Input.GetMouseButtonDown(0))
-                {
-                    if (currentHighlight != null)
-                    {
-                        currentHighlight.HighlightPulse(highlightMaterial, true);
-                    }
-
-                    cachedTarget = hitObject;
-                }
-            }
-            else
-            {
-                if (currentHighlight != null)
-                {
-                    currentHighlight.RemoveHighlight();
-                }
-
-                currentHighlight = null;
-            }
-        }
+        
 
         private void HandleSuggestionSelection()
         {
@@ -482,6 +451,11 @@ namespace DragynGames.Console
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }
+
+        public void SetTarget(GameObject newTarget)
+        {
+            cachedTarget = newTarget;
+        }
     }
 
     public struct ConsoleCommand
@@ -495,4 +469,11 @@ namespace DragynGames.Console
             Target = target;
         }
     }
+
+    public interface IConsoleComponent
+    {
+        public void Tick(float deltaTime);
+        public void OnConsoleWindowAttached(ConsoleWindow consoleWindow);
+    }
+    
 }
