@@ -1,6 +1,6 @@
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using DragynGames.Commands;
 using TMPro;
@@ -44,10 +44,11 @@ namespace DragynGames.Console
         List<TMP_Text> messageTexts = new();
 
 
-        private Queue<string> lastInputs = new();
+        private Queue<ConsoleCommand> lastInputs = new();
         private int selectedLastCommand;
         private int maxStoredInputs = 10;
         private string currentInput;
+        private GameObject cachedTarget;
 
 
         int selectedSuggestionIndex = 0;
@@ -221,7 +222,8 @@ namespace DragynGames.Console
 
         private void inputField_OnSubmit(string consoleInput)
         {
-            SendCommand(consoleInput);
+            SendCommand(consoleInput, cachedTarget);
+            cachedTarget = null; // Clear the cached target after sending the command
         }
 
         private void SendCommand(string consoleInput, GameObject instance = null)
@@ -237,7 +239,6 @@ namespace DragynGames.Console
             if (IsCommand(consoleInput))
             {
                 string command = consoleInput.Trim(commandPrefix);
-
 
                 if (commandManager.ExecuteMethod(command, out CommandExecutionResult result, instance))
                 {
@@ -258,15 +259,15 @@ namespace DragynGames.Console
             }
 
             RemoveTips();
-            ResetInputHistoryScroller(consoleInput);
+            ResetInputHistoryScroller(new ConsoleCommand(consoleInput, instance));
         }
 
-        private void ResetInputHistoryScroller(string consoleInput)
+        private void ResetInputHistoryScroller(ConsoleCommand consoleCommand)
         {
-            lastInputs.Enqueue(consoleInput); // Store the input
+            lastInputs.Enqueue(consoleCommand); // Store the input
             while (lastInputs.Count > maxStoredInputs)
             {
-                lastInputs.Dequeue(); // Remove the oldest input if there are more than 5
+                lastInputs.Dequeue(); // Remove the oldest input if there are more than maxStoredInputs
             }
 
             currentInput = "";
@@ -344,7 +345,7 @@ namespace DragynGames.Console
                         currentHighlight.HighlightPulse(highlightMaterial, true);
                     }
 
-                    SendCommand(inputField.text, hitObject);
+                    cachedTarget = hitObject;
                 }
             }
             else
@@ -402,8 +403,10 @@ namespace DragynGames.Console
                 }
                 else
                 {
-                    inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
+                    var command = lastInputs.ElementAt(selectedLastCommand);
+                    inputField.SetTextWithoutNotify(command.Command);
                     inputField.caretPosition = inputField.text.Length;
+                    cachedTarget = command.Target;
                 }
             }
 
@@ -418,8 +421,10 @@ namespace DragynGames.Console
                 }
                 else
                 {
-                    inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
+                    var command = lastInputs.ElementAt(selectedLastCommand);
+                    inputField.SetTextWithoutNotify(command.Command);
                     inputField.caretPosition = inputField.text.Length;
+                    cachedTarget = command.Target;
                 }
             }
         }
@@ -478,7 +483,7 @@ namespace DragynGames.Console
             element.preferredHeight = height * 100;
         }
     }
-    
+
     public struct ConsoleCommand
     {
         public string Command;

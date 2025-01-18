@@ -10,6 +10,7 @@ namespace DragynGames
         Dictionary<Renderer, Material[]> originalMaterials = new();
         Material highlightMaterial;
         float fadeDuration = 0.5f;
+        Coroutine pulseCoroutine;
 
         public void ActivateHighlight(Material highlightMaterial, bool includeChildren)
         {
@@ -33,9 +34,12 @@ namespace DragynGames
 
             if (originalMaterials.Count > 0)
             {
-                StartCoroutine(PulseHighlight());
+                if (pulseCoroutine != null)
+                {
+                    StopCoroutine(pulseCoroutine);
+                }
+                pulseCoroutine = StartCoroutine(PulseHighlight());
             }
-            
         }
 
         private IEnumerator PulseHighlight()
@@ -98,6 +102,12 @@ namespace DragynGames
 
         public void RemoveHighlight()
         {
+            if (pulseCoroutine != null)
+            {
+                StopCoroutine(pulseCoroutine);
+                pulseCoroutine = null;
+            }
+
             foreach (var renderer in originalMaterials.Keys)
             {
                 renderer.materials = originalMaterials[renderer];
