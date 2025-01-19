@@ -37,13 +37,14 @@ namespace DragynGames.Console
         [SerializeField] int maxNumberOfTips = 5;
         [SerializeField] bool visible;
         [SerializeField] TMP_Text targetDisplay;
-
+        
+        public event Action<bool> OnVisibilityChanged;
+        
         Assembly[] assembly;
         TMP_InputField inputField;
-        private CanvasGroup canvasGroup;
+        CanvasGroup canvasGroup;
         CommandManager commandManager;
         List<TMP_Text> messageTexts = new();
-
 
         private Queue<ConsoleCommand> lastInputs = new();
         private int selectedLastCommand;
@@ -59,10 +60,7 @@ namespace DragynGames.Console
         private ConsoleSettings _settings;
         List<IConsoleComponent> consoleComponents = new();
 
-        //Highlighting
         private ConsoleEntryHistoryTracker _consoleEntryHistoryTracker = new();
-
-        //private ObjectMouseSelection _objectMouseSelection;
 
         [FormerlySerializedAs("highlighMaterial")] [FormerlySerializedAs("outlineMaterial")] [SerializeField]
         Material highlightMaterial;
@@ -413,6 +411,8 @@ namespace DragynGames.Console
                 inputField.ActivateInputField();
                 inputField.SetTextWithoutNotify("");
             }
+            
+            OnVisibilityChanged?.Invoke(visible);
         }
 
         private void ShowAutocomplete(List<SuggestionData> suggestionDatas)
@@ -454,6 +454,8 @@ namespace DragynGames.Console
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }
+
+        
     }
 
     public struct ConsoleCommand
@@ -472,28 +474,5 @@ namespace DragynGames.Console
     {
         public void Tick(float deltaTime);
         public void OnConsoleWindowAttached(ConsoleWindow consoleWindow);
-    }
-    
-    public class NotifyingValue<T>
-    {
-        T value;
-        private Action<T> ValueChanged;
-        
-        public NotifyingValue(T value, Action<T> onValueChanged)
-        {
-            this.value = value;
-            ValueChanged = onValueChanged;
-        }
-        
-        public void Set(T value)
-        {
-            this.value = value;
-            ValueChanged?.Invoke(value);
-        }
-
-        public T Get()
-        {
-            return value;
-        }
     }
 }
