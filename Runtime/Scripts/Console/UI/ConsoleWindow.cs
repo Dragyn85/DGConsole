@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
@@ -33,9 +34,9 @@ namespace DragynGames.Console
         char[] commandPrefix;
 
         [SerializeField] Transform commandTipArea;
-
         [SerializeField] int maxNumberOfTips = 5;
         [SerializeField] bool visible;
+        [SerializeField] TMP_Text targetDisplay;
 
         Assembly[] assembly;
         TMP_InputField inputField;
@@ -47,26 +48,32 @@ namespace DragynGames.Console
         private Queue<ConsoleCommand> lastInputs = new();
         private int selectedLastCommand;
         private int maxStoredInputs = 10;
-        private string currentInput;
-        private GameObject cachedTarget;
+        private ConsoleCommand currentInput;
+
+        public NotifyingValue<GameObject> CurrentTarget;
 
 
         int selectedSuggestionIndex = 0;
         List<string> currentSuggestions = new List<string>();
 
         private ConsoleSettings _settings;
-        List<IConsoleComponent> consoleComponents = new ();
+        List<IConsoleComponent> consoleComponents = new();
 
         //Highlighting
-        
-        
-        private ObjectMouseSelection _objectMouseSelection;
+        private ConsoleEntryHistoryTracker _consoleEntryHistoryTracker = new();
+
+        //private ObjectMouseSelection _objectMouseSelection;
 
         [FormerlySerializedAs("highlighMaterial")] [FormerlySerializedAs("outlineMaterial")] [SerializeField]
         Material highlightMaterial;
 
+        private int currentCaretPosition;
+
         private void Awake()
         {
+            CurrentTarget =
+                new NotifyingValue<GameObject>(null,
+                    (target) => { targetDisplay.SetText(target != null ? target.name : ""); });
             commandManager = new CommandManager();
             _settings = new ConsoleSettings();
             commandManager.RegisterObjectInstance(_settings);
@@ -136,6 +143,13 @@ namespace DragynGames.Console
             {
                 Application.logMessageReceived -= AddLogMessage;
             }
+        }
+        public void ActivateInputMode()
+        {
+            inputField.ActivateInputField();
+            inputField.caretPosition = currentCaretPosition;
+            inputField.selectionAnchorPosition = currentCaretPosition;
+            inputField.selectionFocusPosition = currentCaretPosition;
         }
 
         private void AddLogMessage(string condition, string stacktrace, LogType type)
@@ -224,20 +238,18 @@ namespace DragynGames.Console
                 RemoveTips();
                 return;
             }
-            else
-            {
-                commandManager.FindCommandsStartingWithAsync(input.TrimStart(commandPrefix));
-            }
-
+            currentCaretPosition = inputField.caretPosition;
+            commandManager.FindCommandsStartingWithAsync(input.TrimStart(commandPrefix));
             selectedLastCommand = lastInputs.Count;
-            currentInput = input;
+            currentInput = new ConsoleCommand(input, CurrentTarget.Get());
             commandManager.GetSuggestions(input.TrimStart(commandPrefix), ShowAutocomplete);
+            
         }
 
         private void inputField_OnSubmit(string consoleInput)
         {
-            SendCommand(consoleInput, cachedTarget);
-            cachedTarget = null; // Clear the cached target after sending the command
+            SendCommand(consoleInput, CurrentTarget.Get());
+            CurrentTarget.Set(null); // Clear the cached target after sending the command
         }
 
         private void SendCommand(string consoleInput, GameObject instance = null)
@@ -273,19 +285,9 @@ namespace DragynGames.Console
             }
 
             RemoveTips();
-            ResetInputHistoryScroller(new ConsoleCommand(consoleInput, instance));
-        }
-
-        private void ResetInputHistoryScroller(ConsoleCommand consoleCommand)
-        {
-            lastInputs.Enqueue(consoleCommand); // Store the input
-            while (lastInputs.Count > maxStoredInputs)
-            {
-                lastInputs.Dequeue(); // Remove the oldest input if there are more than maxStoredInputs
-            }
-
-            currentInput = "";
-            selectedLastCommand = lastInputs.Count;
+            _consoleEntryHistoryTracker.AddEntry(new ConsoleCommand(consoleInput, instance));
+            _consoleEntryHistoryTracker.ResetHistorySelection();
+            currentInput = new ConsoleCommand();
         }
 
         private bool IsCommand(string text)
@@ -310,23 +312,21 @@ namespace DragynGames.Console
             if (Input.GetKeyDown(toggleVisabilty))
             {
                 SetVisability(!visible);
+                CurrentTarget.Set(null);
             }
 
             if (!visible)
                 return;
-            
+
             foreach (var consoleComponent in consoleComponents)
             {
                 consoleComponent.Tick(Time.deltaTime);
             }
 
-            
 
             HandleHistorySelection();
             HandleSuggestionSelection();
         }
-
-        
 
         private void HandleSuggestionSelection()
         {
@@ -362,40 +362,43 @@ namespace DragynGames.Console
         private void HandleHistorySelection()
         {
             if (Input.GetKeyDown(KeyCode.UpArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused &&
-                lastInputs.Count > 0)
+                _consoleEntryHistoryTracker.HasEntries())
             {
-                selectedLastCommand--;
-                if (selectedLastCommand < 0)
+                bool success = _consoleEntryHistoryTracker.GetNextEntry(out ConsoleCommand oldCommand);
+                if (!success)
                 {
-                    selectedLastCommand = lastInputs.Count - 1;
-                    inputField.text = currentInput;
+                    inputField.text = currentInput.Command;
+                    CurrentTarget.Set(currentInput.Target);
                 }
                 else
                 {
-                    var command = lastInputs.ElementAt(selectedLastCommand);
-                    inputField.SetTextWithoutNotify(command.Command);
-                    inputField.caretPosition = inputField.text.Length;
-                    cachedTarget = command.Target;
+                    SetInputFieldTextUnnotified(oldCommand);
                 }
             }
 
-            if (Input.GetKeyDown(KeyCode.DownArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused &&
-                lastInputs.Count > 0)
+            if (Input.GetKeyDown(KeyCode.DownArrow) &&
+                !Input.GetKey(KeyCode.LeftControl) &&
+                inputField.isFocused &&
+                _consoleEntryHistoryTracker.HasEntries())
             {
-                selectedLastCommand++;
-                if (selectedLastCommand >= lastInputs.Count)
+                bool success = _consoleEntryHistoryTracker.GetPreviousEntry(out ConsoleCommand oldCommand);
+                if (!success)
                 {
-                    selectedLastCommand = 0;
-                    inputField.text = currentInput;
+                    inputField.text = currentInput.Command;
+                    CurrentTarget.Set(currentInput.Target);
                 }
                 else
                 {
-                    var command = lastInputs.ElementAt(selectedLastCommand);
-                    inputField.SetTextWithoutNotify(command.Command);
-                    inputField.caretPosition = inputField.text.Length;
-                    cachedTarget = command.Target;
+                    SetInputFieldTextUnnotified(oldCommand);
                 }
             }
+        }
+
+        private void SetInputFieldTextUnnotified(ConsoleCommand oldCommand)
+        {
+            inputField.SetTextWithoutNotify(oldCommand.Command);
+            inputField.caretPosition = inputField.text.Length;
+            CurrentTarget.Set(oldCommand.Target);
         }
 
         private void SetVisability(bool visible)
@@ -451,11 +454,6 @@ namespace DragynGames.Console
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }
-
-        public void SetTarget(GameObject newTarget)
-        {
-            cachedTarget = newTarget;
-        }
     }
 
     public struct ConsoleCommand
@@ -476,4 +474,26 @@ namespace DragynGames.Console
         public void OnConsoleWindowAttached(ConsoleWindow consoleWindow);
     }
     
+    public class NotifyingValue<T>
+    {
+        T value;
+        private Action<T> ValueChanged;
+        
+        public NotifyingValue(T value, Action<T> onValueChanged)
+        {
+            this.value = value;
+            ValueChanged = onValueChanged;
+        }
+        
+        public void Set(T value)
+        {
+            this.value = value;
+            ValueChanged?.Invoke(value);
+        }
+
+        public T Get()
+        {
+            return value;
+        }
+    }
 }

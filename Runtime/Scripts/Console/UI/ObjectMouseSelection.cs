@@ -52,7 +52,8 @@ namespace DragynGames.Console
                         currentHighlight.HighlightPulse(highlightMaterial, true);
                     }
 
-                    consoleWindow.SetTarget(hitObject);
+                    consoleWindow.CurrentTarget.Set(hitObject);
+                    consoleWindow.ActivateInputMode();
                 }
             }
             else
