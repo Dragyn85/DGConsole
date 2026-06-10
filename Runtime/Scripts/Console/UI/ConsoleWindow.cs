@@ -84,7 +84,14 @@ namespace DragynGames.Console
 #if ENABLE_INPUT_SYSTEM
             _consoleUserInput = new ConsoleWindowInputReader();
 #else
-            _consoleUserInput = new ConsoleWindowLegacyInputReader();
+            if(TryGetComponent(out ConsoleWindowLegacyInputReader legacyInputReader))
+            {
+                _consoleUserInput = legacyInputReader;
+            }
+            else
+            {
+                _consoleUserInput = gameObject.AddComponent<ConsoleWindowLegacyInputReader>();
+            }
 #endif
             _consoleUserInput.Bind(this);
 
