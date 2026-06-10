@@ -1,0 +1,187 @@
+{
+    "version": 1,
+    "name": "ConsoleAction",
+    "maps": [
+        {
+            "name": "ConsoleVisibility",
+            "id": "cde1e926-e607-4daa-bc64-e5cad033603b",
+            "actions": [
+                {
+                    "name": "ToggleWindow",
+                    "type": "Button",
+                    "id": "8c1933d9-75f8-476e-827d-655aa504ea3b",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "MousePosition",
+                    "type": "Value",
+                    "id": "5d3f7dd6-673a-43d6-8054-6e496225cc6a",
+                    "expectedControlType": "Vector2",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": true
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "f22b25c9-f00f-4e36-8ffb-0db1d52f7142",
+                    "path": "<Keyboard>/backquote",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ToggleWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "51203ec8-88e8-4950-9076-20b5ac77aebb",
+                    "path": "<Mouse>/position",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "MousePosition",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        },
+        {
+            "name": "ConsoleControls",
+            "id": "b634ea70-3bd1-4a99-9f9d-a8c603f5e429",
+            "actions": [
+                {
+                    "name": "CycleHistoryUp",
+                    "type": "Button",
+                    "id": "f4de4004-1fc5-4f4e-9537-6a2017cdf7a8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CycleHistoryDown",
+                    "type": "Button",
+                    "id": "6c2259ff-adb7-4a8e-add3-f38f080ce2f2",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CycleSuggestionsUp",
+                    "type": "Button",
+                    "id": "525c24ce-9e40-4818-a893-fd4238011d29",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Press",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CycleSuggestionsDown",
+                    "type": "Button",
+                    "id": "2ae9658d-01bc-4502-b2da-3fb26d06d4c8",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "Press",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "64b2dc56-ad74-4d1e-ad07-a90f54d99568",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleHistoryUp",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c9daf7f4-e8d5-42b0-a9f1-949536a07323",
+                    "path": "<Keyboard>/downArrow",
+                    "interactions": "Press",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleHistoryDown",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "One Modifier",
+                    "id": "62c8972d-188c-4010-b361-24d52af59447",
+                    "path": "OneModifier(modifiersOrder=1)",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleSuggestionsUp",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "6455057e-a9e6-4edf-8234-0c4a8a6fcfe2",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleSuggestionsUp",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "a33f9b96-7160-46aa-a026-b60bff5487a9",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleSuggestionsUp",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "One Modifier",
+                    "id": "7a59eba6-4d70-4b41-afeb-d9214c4dd87f",
+                    "path": "OneModifier(modifiersOrder=1)",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleSuggestionsDown",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "781aebc5-e2de-45da-8b8c-83eaed0184ce",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleSuggestionsDown",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "0648b43c-24a5-4368-9df2-1f20d583c997",
+                    "path": "<Keyboard>/downArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CycleSuggestionsDown",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

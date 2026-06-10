@@ -6,15 +6,16 @@ using Action = System.Action;
 
 namespace DragynGames.Console.UI
 {
-    internal class Resize : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+    internal class Resize : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IUseScreenPosition
     {
         [SerializeField] private RectTransform targetWindow;
         [SerializeField] private float responsivenessMultiplier = 1.8f; // Adjustable multiplier for responsiveness
 
         private bool isWindowGrabbed;
 
-        private Vector2 startPosition;
-        private Vector2 startSize;
+        private Vector2                 startPosition;
+        private Vector2                 startSize;
+        private IConsoleUserInput screenPosReader;
 
         public event Action OnResizeFinished;
         public void OnPointerDown(PointerEventData eventData)
@@ -28,7 +29,7 @@ namespace DragynGames.Console.UI
         private IEnumerator ResizeWindow() {
             while(isWindowGrabbed)
             {
-                Vector2 mouseDelta = startPosition - (Vector2)Input.mousePosition;
+                Vector2 mouseDelta = startPosition - (Vector2) screenPosReader.GetScreenPosition();
 
                 // Apply scaling based on screen resolution
                 Vector2 scaledDelta = ScaleDelta(mouseDelta);
@@ -52,6 +53,11 @@ namespace DragynGames.Console.UI
         public void OnPointerUp(PointerEventData eventData) {
             isWindowGrabbed = false;
             OnResizeFinished?.Invoke();
+        }
+
+        public void SetInputReader(IConsoleUserInput inputReader)
+        {
+            screenPosReader = inputReader;
         }
     }
 }
