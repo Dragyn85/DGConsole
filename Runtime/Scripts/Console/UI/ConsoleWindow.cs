@@ -20,6 +20,7 @@ namespace DragynGames.Console
         void Bind(INeedConsoleInput consoleWindow);
         void EnableControls(bool shouldReadInput);
     }
+
     internal interface INeedConsoleInput
     {
         void ToggleVisibility();
@@ -28,20 +29,22 @@ namespace DragynGames.Console
         void CycleSuggestionsUp();
         void CycleSuggestionsDown();
     }
+
     internal interface IUseScreenPosition
     {
         void SetInputReader(IConsoleUserInput inputReader);
     }
 
-    
 
     internal class ConsoleWindow : MonoBehaviour, INeedConsoleInput
     {
         IConsoleUserInput _consoleUserInput;
-        [Header("Visibility")]
-        [SerializeField] private      Canvas canvas;
-        [SerializeField, Range(0, 1)] float  visbleAlpha = 1;
-        
+
+        [Header("Visibility")] [SerializeField]
+        private Canvas canvas;
+
+        [SerializeField, Range(0, 1)] float visbleAlpha = 1;
+
         [Space(10)] [Header("Message area")] [SerializeField]
         Transform windowContent;
 
@@ -78,9 +81,13 @@ namespace DragynGames.Console
 
         private void Awake()
         {
+#if ENABLE_INPUT_SYSTEM
             _consoleUserInput = new ConsoleWindowInputReader();
+#else
+            _consoleUserInput = new ConsoleWindowLegacyInputReader();
+#endif
             _consoleUserInput.Bind(this);
-            
+
             commandManager = new CommandManager();
             _settings = new ConsoleSettings();
             commandManager.RegisterObjectInstance(_settings);
@@ -113,7 +120,6 @@ namespace DragynGames.Console
 
         public void SetInputReader(IConsoleUserInput inputReader)
         {
-            
         }
 
         private void OnDestroy()
@@ -394,10 +400,10 @@ namespace DragynGames.Console
 
             if (visible)
             {
-                
                 StartCoroutine(ActivateInputfieldNextFrame());
             }
         }
+
         IEnumerator ActivateInputfieldNextFrame()
         {
             yield return null;
@@ -445,7 +451,7 @@ namespace DragynGames.Console
             element.preferredHeight = height * 100;
         }
 
-        
+
         // private void OnValidate()
         // {
         //     var eventSystem = FindFirstObjectByType<EventSystem>();
