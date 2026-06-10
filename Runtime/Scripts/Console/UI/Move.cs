@@ -6,12 +6,13 @@ using UnityEngine.EventSystems;
 
 namespace DragynGames.Console.UI
 {
-    internal class Move : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+    internal class Move : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IUseScreenPosition
     {
         [SerializeField] private Transform targetWindow;
-
         
-        private Vector3 windowHoldOffset;
+        
+        IConsoleUserInput _screenPositionProvider;
+        private Vector2 windowHoldOffset;
         private bool isWindowGrabbed;
         
         public event Action OnMoveFinished;
@@ -24,7 +25,7 @@ namespace DragynGames.Console.UI
 
         private IEnumerator MoveWindow() {
             while(isWindowGrabbed) {
-                targetWindow.position = Input.mousePosition + windowHoldOffset;
+                targetWindow.position = _screenPositionProvider.GetScreenPosition() + windowHoldOffset;
                 yield return null;
             }
         }
@@ -32,6 +33,11 @@ namespace DragynGames.Console.UI
         public void OnPointerUp(PointerEventData eventData) {
             isWindowGrabbed = false;
             OnMoveFinished?.Invoke();
+        }
+
+        public void SetInputReader(IConsoleUserInput screenPositionProvider)
+        {
+            _screenPositionProvider = screenPositionProvider;
         }
     }
 }

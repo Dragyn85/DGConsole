@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,53 +9,78 @@ using UnityEngine;
 using UnityEngine.UI;
 using Image = UnityEngine.UI.Image;
 using DragynGames.Console.UI;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 namespace DragynGames.Console
 {
-    internal class ConsoleWindow : MonoBehaviour
+    internal interface IConsoleUserInput
     {
-        [Header("Visibility")] [SerializeField]
-        KeyCode toggleVisabilty = KeyCode.L;
+        Vector2 GetScreenPosition();
+        void Bind(INeedConsoleInput consoleWindow);
+        void EnableControls(bool shouldReadInput);
+    }
+    internal interface INeedConsoleInput
+    {
+        void ToggleVisibility();
+        void CycleHistoryCommandUp();
+        void CycleHistoryCommandDown();
+        void CycleSuggestionsUp();
+        void CycleSuggestionsDown();
+    }
+    internal interface IUseScreenPosition
+    {
+        void SetInputReader(IConsoleUserInput inputReader);
+    }
 
-        [SerializeField, Range(0, 1)] float visbleAlpha = 1;
+    
 
-
+    internal class ConsoleWindow : MonoBehaviour, INeedConsoleInput
+    {
+        IConsoleUserInput _consoleUserInput;
+        [Header("Visibility")]
+        [SerializeField] private      Canvas canvas;
+        [SerializeField, Range(0, 1)] float  visbleAlpha = 1;
+        
         [Space(10)] [Header("Message area")] [SerializeField]
         Transform windowContent;
 
-        [SerializeField] TMP_Text messagePrefab;
-        [SerializeField] ScrollRect scrollRect;
-        [SerializeField] Image backGround;
+        [SerializeField] TMP_Text      messagePrefab;
+        [SerializeField] ScrollRect    scrollRect;
+        [SerializeField] Image         backGround;
         [SerializeField] RectTransform window;
 
 
-        [Space(10)] [Header("Commands")] 
-        [SerializeField] char[] commandPrefix;
+        [Space(10)] [Header("Commands")] [SerializeField]
+        char[] commandPrefix;
 
         [SerializeField] Transform commandTipArea;
 
-        TMP_InputField inputField;
-        [SerializeField] int maxNumberOfTips = 5;
-        [SerializeField] bool visible;
-        private CanvasGroup canvasGroup;
+        TMP_InputField               inputField;
+        [SerializeField] int         maxNumberOfTips = 5;
+        [SerializeField] bool        visible;
+        private          CanvasGroup canvasGroup;
 
         [SerializeField] Assembly[] assembly;
-        CommandManager commandManager;
-        List<TMP_Text> messageTexts = new();
+        CommandManager              commandManager;
+        List<TMP_Text>              messageTexts = new();
 
 
         private Queue<string> lastInputs = new();
-        private int selectedLastCommand;
-        private int maxStoredInputs = 10;
-        private string currentInput;
-        
-        int selectedSuggestionIndex = 0;
-        List<string> currentSuggestions = new List<string>();
+        private int           selectedLastCommand;
+        private int           maxStoredInputs = 10;
+        private string        currentInput;
+
+        int          selectedSuggestionIndex = 0;
+        List<string> currentSuggestions      = new List<string>();
 
         private ConsoleSettings _settings;
 
         private void Awake()
         {
+            _consoleUserInput = new ConsoleWindowInputReader();
+            _consoleUserInput.Bind(this);
+            
             commandManager = new CommandManager();
             _settings = new ConsoleSettings();
             commandManager.RegisterObjectInstance(_settings);
@@ -66,7 +92,7 @@ namespace DragynGames.Console
             AddListeners();
 
             UpdateSettings();
-            
+
             var size = _settings.GetSize();
             var position = _settings.GetPosition();
             if (size != Vector2.zero)
@@ -74,6 +100,19 @@ namespace DragynGames.Console
                 window.sizeDelta = size;
                 window.anchoredPosition = position;
             }
+        }
+
+        private void Start()
+        {
+            var inputUsers = GetComponentsInChildren<IUseScreenPosition>();
+            foreach (var inputUser in inputUsers)
+            {
+                inputUser.SetInputReader(_consoleUserInput);
+            }
+        }
+
+        public void SetInputReader(IConsoleUserInput inputReader)
+        {
             
         }
 
@@ -82,7 +121,7 @@ namespace DragynGames.Console
             _settings.OnSettingsChanged -= UpdateSettings;
             Application.logMessageReceived -= AddLogMessage;
         }
-        
+
         [ConsoleAction("Clean", "Removes all messages from the console")]
         private void RemoveMessages()
         {
@@ -90,6 +129,7 @@ namespace DragynGames.Console
             {
                 Destroy(message.gameObject);
             }
+
             messageTexts.Clear();
         }
 
@@ -119,15 +159,16 @@ namespace DragynGames.Console
         {
             if (!Application.isPlaying)
                 return;
-            
+
             bool isAcceptedType = _settings.GetAcceptedLogTypes()[(int) type];
             bool shouldPrintStacktrace = _settings.GetAcceptedStackTraces()[(int) type];
-            
+
             if (isAcceptedType)
             {
                 PrintLogText(condition, type);
             }
-            if(isAcceptedType && shouldPrintStacktrace)
+
+            if (isAcceptedType && shouldPrintStacktrace)
             {
                 PrintLogText(stacktrace, type);
             }
@@ -161,10 +202,10 @@ namespace DragynGames.Console
             GetComponentInChildren<Move>().OnMoveFinished += HandlePositionChange;
             GetComponentInChildren<Resize>().OnResizeFinished += HandlePositionChange;
         }
-        
+
         private void HandlePositionChange()
         {
-            _settings.SavePosition(window.anchoredPosition,window.sizeDelta);
+            _settings.SavePosition(window.anchoredPosition, window.sizeDelta);
         }
 
         private void HandleDeselect(string text)
@@ -176,7 +217,7 @@ namespace DragynGames.Console
         {
             if (string.IsNullOrEmpty(message))
                 return;
-            
+
             TMP_Text newMessage = Instantiate(messagePrefab);
             newMessage.SetText(message);
             newMessage.fontSize = _settings.GetTextSize();
@@ -216,7 +257,7 @@ namespace DragynGames.Console
             {
                 return;
             }
-            
+
             inputField.SetTextWithoutNotify(string.Empty);
             inputField.ActivateInputField();
 
@@ -281,67 +322,63 @@ namespace DragynGames.Console
             return isCommand;
         }
 
-        private void Update()
+        public void ToggleVisibility()
         {
-            if (Input.GetKeyDown(toggleVisabilty))
+            SetVisability(!visible);
+        }
+
+        public void CycleHistoryCommandUp()
+        {
+            selectedLastCommand--;
+            if (selectedLastCommand < 0)
             {
-                SetVisability(!visible);
+                selectedLastCommand = lastInputs.Count - 1;
+                inputField.text = currentInput;
             }
-
-            if (!visible)
-                return;
-
-            if (Input.GetKeyDown(KeyCode.UpArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused && lastInputs.Count > 0)
+            else
             {
-                selectedLastCommand--;
-                if (selectedLastCommand < 0)
-                {
-                    selectedLastCommand = lastInputs.Count - 1;
-                    inputField.text = currentInput;
-                }
-                else
-                {
-                    inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
-                    inputField.caretPosition = inputField.text.Length;
-                }
-            }
-
-            if (Input.GetKeyDown(KeyCode.DownArrow) && !Input.GetKey(KeyCode.LeftControl) && inputField.isFocused && lastInputs.Count > 0)
-            {
-                selectedLastCommand++;
-                if (selectedLastCommand >= lastInputs.Count)
-                {
-                    selectedLastCommand = 0;
-                    inputField.text = currentInput;
-                }
-                else
-                {
-                    inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
-                    inputField.caretPosition = inputField.text.Length;
-                }
-            }
-            if ((Input.GetKeyDown(KeyCode.UpArrow) && Input.GetKey(KeyCode.LeftControl)) && currentSuggestions.Count > 0)
-            {
-                selectedSuggestionIndex--;
-                if (selectedSuggestionIndex < 0)
-                {
-                    selectedSuggestionIndex = currentSuggestions.Count - 1;
-                }
-
-                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
-                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+                inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
                 inputField.caretPosition = inputField.text.Length;
             }
+        }
 
-            if (Input.GetKeyDown(KeyCode.DownArrow) &&Input.GetKey(KeyCode.LeftControl) && currentSuggestions.Count > 0)
+        public void CycleSuggestionsDown()
+        {
+            selectedSuggestionIndex++;
+            if (selectedSuggestionIndex >= currentSuggestions.Count)
             {
-                selectedSuggestionIndex++;
-                if (selectedSuggestionIndex >= currentSuggestions.Count)
-                {
-                    selectedSuggestionIndex = 0;
-                }
-                string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "" ;
-                inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+                selectedSuggestionIndex = 0;
+            }
+
+            string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "";
+            inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+            inputField.caretPosition = inputField.text.Length;
+        }
+
+        public void CycleSuggestionsUp()
+        {
+            selectedSuggestionIndex--;
+            if (selectedSuggestionIndex < 0)
+            {
+                selectedSuggestionIndex = currentSuggestions.Count - 1;
+            }
+
+            string prefix = commandPrefix.Length > 0 ? commandPrefix[0].ToString() : "";
+            inputField.SetTextWithoutNotify($"{prefix}{currentSuggestions[selectedSuggestionIndex]}");
+            inputField.caretPosition = inputField.text.Length;
+        }
+
+        public void CycleHistoryCommandDown()
+        {
+            selectedLastCommand++;
+            if (selectedLastCommand >= lastInputs.Count)
+            {
+                selectedLastCommand = 0;
+                inputField.text = currentInput;
+            }
+            else
+            {
+                inputField.SetTextWithoutNotify(lastInputs.ElementAt(selectedLastCommand));
                 inputField.caretPosition = inputField.text.Length;
             }
         }
@@ -352,12 +389,20 @@ namespace DragynGames.Console
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
             this.visible = visible;
+            canvas.enabled = visible;
+            _consoleUserInput.EnableControls(visible);
 
             if (visible)
             {
-                inputField.ActivateInputField();
-                inputField.SetTextWithoutNotify("");
+                
+                StartCoroutine(ActivateInputfieldNextFrame());
             }
+        }
+        IEnumerator ActivateInputfieldNextFrame()
+        {
+            yield return null;
+            inputField.SetTextWithoutNotify("");
+            inputField.ActivateInputField();
         }
 
         private void ShowAutocomplete(List<SuggestionData> suggestionDatas)
@@ -399,7 +444,15 @@ namespace DragynGames.Console
             var element = commandTipArea.GetComponent<LayoutElement>();
             element.preferredHeight = height * 100;
         }
+
         
-        
+        // private void OnValidate()
+        // {
+        //     var eventSystem = FindFirstObjectByType<EventSystem>();
+        //     if (eventSystem == null)
+        //     {
+        //         GameObject go = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+        //     }
+        // }
     }
 }
